@@ -9,6 +9,10 @@ def debug_me(func, *args, **kwargs):
     """
     arg_str = ", ".join([str(a) for a in args] + [str(k) + "=" + str(kwargs[k]) for k in kwargs])
     print('#--- {}({}) ---'.format(func.__name__, arg_str))
-    result = func(*args, **kwargs)
-    print('#--- RES: {} ---'.format(result))
-    return result
+    try:
+        result = func(*args, **kwargs)
+        print('#--- RES: {} ---'.format(result))
+        return result
+    except Exception as err:
+        print('#--- FAILED: {} ---'.format(err))
+        raise err
