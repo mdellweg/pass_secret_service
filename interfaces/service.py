@@ -9,6 +9,10 @@ from common.names import bus_name, base_path
 from interfaces.collection import Collection
 from interfaces.session import Session
 
+class DBusNotSupported(Exception):
+    pass
+DBusNotSupported.__name__ = "org.freedesktop.DBus.Error.NotSupported"
+
 class Service(object):
     """
       <node>
@@ -75,7 +79,7 @@ class Service(object):
     @debug_me
     def OpenSession(self, algorithm, input):
         if algorithm != 'plain':
-            raise Exception('only algorithm plain is implemented')
+            raise DBusNotSupported('only algorithm plain is implemented')
         output = GLib.Variant('i', 0)
         new_session = Session(self.bus)
         result = new_session.path
