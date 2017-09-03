@@ -1,4 +1,4 @@
 secret_type = '(oayays)'
 
-bus_name = 'org.freedesktop.sekrets'
-base_path = '/org/freedesktop/sekrets'
+bus_name = 'org.freedesktop.secrets'
+base_path = '/org/freedesktop/secrets'

@@ -9,7 +9,7 @@ if __name__ == '__main__':
     bus = pydbus.SessionBus()
     service = bus.get(bus_name)
     print(service)
-    output, session_path = service.OpenSession('plain', GLib.Variant('i', 0))
+    output, session_path = service.OpenSession('plain', GLib.Variant('s', ''))
     session = bus.get(bus_name, session_path)
     print(session)
     session.Close()

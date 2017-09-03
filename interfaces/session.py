@@ -2,13 +2,13 @@
 # TODO unregister when client disconnects from dbus
 
 import pydbus
-import uuid
 from gi.repository import GLib
 from common.debug import debug_me
 
 from common.names import base_path
+from common.tools import SerialMixin
 
-class Session(object):
+class Session(SerialMixin):
     """
       <node>
         <interface name='org.freedesktop.Secret.Session'>
@@ -16,11 +16,11 @@ class Session(object):
         </interface>
       </node>
     """
-    
+
     @debug_me
     def __init__(self, bus):
         self.bus = bus
-        self.path = base_path + '/session/' + str(uuid.uuid4()).replace('-', '_')
+        self.path = '{}/session/session{}'.format(base_path, self._serial())
         self.pub_ref = bus.register_object(self.path, self, None)
 
     @debug_me

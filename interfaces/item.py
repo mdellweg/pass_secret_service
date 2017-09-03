@@ -16,10 +16,10 @@ class Item(object):
           </method>
           <method name='GetSecret'>
             <arg type='o' name='session' direction='in'/>
-            <arg type='o' name='secret' direction='out'/>
+            <arg type='(oayays)' name='secret' direction='out'/>
           </method>
           <method name='SetSecret'>
-            <arg type='o' name='secret' direction='in'/>
+            <arg type='(oayays)' name='secret' direction='in'/>
           </method>
           <property name='Locked' type='b' access='read'/>
           <property name='Attributes' type='a{ss}' access='readwrite'/>
@@ -40,7 +40,8 @@ class Item(object):
     @debug_me
     def Delete(self):
         self.pub_ref.unregister()
-        #TODO actually delete
+        # TODO actually delete
+        # TODO signal deletion
         prompt = "/"
         return prompt
 

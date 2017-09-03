@@ -5,12 +5,12 @@ from pydbus.generic import signal
 from gi.repository import GLib
 
 from common.debug import debug_me
-from common.exceptions import DBusNotSupported
+from common.exceptions import DBusErrorNotSupported
 from common.names import bus_name, base_path
 from interfaces.collection import Collection
 from interfaces.session import Session
 
-class Service(object):
+class Service:
     """
       <node>
         <interface name='org.freedesktop.Secret.Service'>
@@ -44,7 +44,7 @@ class Service(object):
           <method name='GetSecrets'>
             <arg type='ao' name='items' direction='in'/>
             <arg type='o' name='session' direction='in'/>
-            <arg type='a{oo}' name='secrets' direction='out'/>
+            <arg type='a{o(oayays)}' name='secrets' direction='out'/>
           </method>
           <method name='ReadAlias'>
             <arg type='s' name='name' direction='in'/>
@@ -72,48 +72,50 @@ class Service(object):
     def __init__(self, bus):
         self.bus = bus
         self.pub_ref = bus.publish(bus_name, self)
+        self.collections = []
 
     @debug_me
     def OpenSession(self, algorithm, input):
         if algorithm != 'plain':
-            raise DBusNotSupported('only algorithm plain is implemented')
-        output = GLib.Variant('i', 0)
+            raise DBusErrorNotSupported('only algorithm plain is implemented')
+        output = GLib.Variant('s', '')
         new_session = Session(self.bus)
         result = new_session.path
         return output, result
 
     @debug_me
     def CreateCollection(self, properties, alias):
-        new_collection = Collection(self.bus, 'test1')
-        collection = new_collection.path
+        collection = Collection(self, properties)
+        self.collections.append(collection.path)
+        self.CollectionCreated(collection.path)
         prompt = '/'
-        return collection, prompt
+        return collection.path, prompt
  
     @debug_me
     def SearchItems(self, attributes):
-        unlocked = None
-        locked = None
+        unlocked = []
+        locked = []
         return unlocked, locked
 
     @debug_me
     def Unlock(self, objects):
-        unlocked = None
-        prompt = None
-        return unlocked, promt
+        unlocked = []
+        prompt = '/'
+        return unlocked, prompt
  
     @debug_me
     def Lock(self, objects):
-        locked = None
-        prompt = None
+        locked = []
+        prompt = '/'
         return locked, prompt
     @debug_me
     def GetSecrets(self, items, session):
-        secrets = None
+        secrets = {}
         return secrets
  
     @debug_me
     def ReadAlias(self, name):
-        collection = None
+        collection = '/'
         return collection
  
     @debug_me
@@ -127,4 +129,4 @@ class Service(object):
     @property
     @debug_me
     def Collections(self):
-        return []
+        return self.collections
