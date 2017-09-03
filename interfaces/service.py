@@ -3,15 +3,12 @@
 import pydbus
 from pydbus.generic import signal
 from gi.repository import GLib
-from common.debug import debug_me
 
+from common.debug import debug_me
+from common.exceptions import DBusNotSupported
 from common.names import bus_name, base_path
 from interfaces.collection import Collection
 from interfaces.session import Session
-
-class DBusNotSupported(Exception):
-    pass
-DBusNotSupported.__name__ = "org.freedesktop.DBus.Error.NotSupported"
 
 class Service(object):
     """
