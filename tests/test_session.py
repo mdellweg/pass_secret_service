@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
+import unittest
 import secretstorage
 
-bus = secretstorage.dbus_init()
+class TestSession(unittest.TestCase):
+    def setUp(self):
+        self.bus = secretstorage.dbus_init()
 
-secretstorage.get_default_collection(bus)
+    def test_default_collection(self):
+        secretstorage.get_default_collection(self.bus)
+
+if __name__ == "__main__":
+    unittest.main()
