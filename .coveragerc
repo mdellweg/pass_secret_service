@@ -1,0 +1,9 @@
+[run]
+branch = True
+source = .
+
+[report]
+precision = 2
+skip_covered = True
+sort = cover
+show_missing = True

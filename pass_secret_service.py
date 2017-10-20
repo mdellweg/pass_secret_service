@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
-import subprocess
+import signal
 import pydbus
 from gi.repository import GLib
 from interfaces.service import Service
 
+def sigterm(mainloop):
+    mainloop.quit()
+
 if __name__ == '__main__':
     bus = pydbus.SessionBus()
-    Service(bus)
+    service = Service(bus)
 
-    loop = GLib.MainLoop()
-    loop.run()
+    mainloop = GLib.MainLoop()
+    GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM,
+                         sigterm, mainloop)
+
+    mainloop.run()
