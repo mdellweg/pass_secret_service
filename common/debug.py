@@ -1,18 +1,36 @@
 # Debug decorator
 
+import sys
+import os
 from decorator import decorator
 
+def eprint(*args, **kwargs):  # pragma: no cover
+    """
+        Print to stderr instead of stdout
+    """
+    print(*args, file=sys.stderr, **kwargs)
+
+def debug_me_fake(func):  # pragma: no cover
+    return func
+
 @decorator
-def debug_me(func, *args, **kwargs):
+def debug_me_real(func, *args, **kwargs):  # pragma: no cover
     """
         Decorator that prints function name before calling the actual function
+        also prints its result / error state
     """
     arg_str = ", ".join([repr(a) for a in args] + [str(k) + "=" + repr(kwargs[k]) for k in kwargs])
-    print('#--- {}({}) ---'.format(func.__name__, arg_str))
+    eprint('#--- {}({}) ---'.format(func.__name__, arg_str))
     try:
         result = func(*args, **kwargs)
-        print('#--- RES: {} ---'.format(result))
+        eprint('#--- RES: {} ---'.format(result))
         return result
     except Exception as err:
-        print('#--- FAILED: {} ---'.format(err))
+        eprint('#--- FAILED: {} ---'.format(err))
         raise err
+
+
+if os.environ.get('DEBUG_PASS_SECRET_SERVICE') :  # pragma: no branch
+    debug_me = debug_me_real  # pragma: no cover
+else:
+    debug_me = debug_me_fake  # pragma: no cover

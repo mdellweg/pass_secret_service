@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 
 import unittest
-import secretstorage
+import pydbus
+from gi.repository import GLib
+from common.names import bus_name, base_path
 
-class TestSession(unittest.TestCase):
+class TestSecretStorage(unittest.TestCase):
     def setUp(self):
-        self.bus = secretstorage.dbus_init()
+        self.bus = pydbus.SessionBus()
+        self.service = self.bus.get(bus_name)
 
-    def test_default_collection(self):
-        secretstorage.get_default_collection(self.bus)
+    def test_session_plain(self):
+        output, session_path = self.service.OpenSession('plain', GLib.Variant('s', ''))
+        session = self.bus.get(bus_name, session_path)
+        session.Close()
+
+    def test_session_error(self):
+        with self.assertRaises(GLib.GError):
+            output, session_path = self.service.OpenSession('wrong plain', GLib.Variant('s', ''))
 
 if __name__ == "__main__":
     unittest.main()

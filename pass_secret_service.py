@@ -8,7 +8,7 @@ from interfaces.service import Service
 def sigterm(mainloop):
     mainloop.quit()
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no branch
     bus = pydbus.SessionBus()
     service = Service(bus)
 
