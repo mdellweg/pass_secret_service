@@ -67,7 +67,7 @@ class Service:
         </interface>
       </node>
     """
-    
+
     @debug_me
     def __init__(self, bus):
         self.bus = bus
@@ -90,7 +90,7 @@ class Service:
         self.CollectionCreated(collection.path)
         prompt = '/'
         return collection.path, prompt
- 
+
     @debug_me
     def SearchItems(self, attributes):
         unlocked = []
@@ -102,7 +102,7 @@ class Service:
         unlocked = []
         prompt = '/'
         return unlocked, prompt
- 
+
     @debug_me
     def Lock(self, objects):
         locked = []
@@ -112,12 +112,12 @@ class Service:
     def GetSecrets(self, items, session):
         secrets = {}
         return secrets
- 
+
     @debug_me
     def ReadAlias(self, name):
         collection = '/'
         return collection
- 
+
     @debug_me
     def SetAlias(self, name, collection):
         return None

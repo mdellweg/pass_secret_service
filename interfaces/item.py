@@ -29,7 +29,7 @@ class Item(object):
         </interface>
       </node>
     """
-    
+
     @debug_me
     def __init__(self, bus, collection_label, label):
         self.bus = bus

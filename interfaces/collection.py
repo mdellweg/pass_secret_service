@@ -46,7 +46,7 @@ class Collection(object):
         </interface>
       </node>
     """
-    
+
     @debug_me
     def __init__(self, parent, properties):
         self.parent = parent
