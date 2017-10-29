@@ -4,9 +4,9 @@ import signal
 import pydbus
 from gi.repository import GLib
 import click
-import pypass
 
 from interfaces.service import Service
+from common.pass_store import PassStore
 
 def sigterm(mainloop):
     mainloop.quit()
@@ -15,8 +15,8 @@ def sigterm(mainloop):
 @click.option('--path', help='path to the password store (optional)')
 def main(path):
     bus = pydbus.SessionBus()
-    password_store = pypass.PasswordStore(**({'path': path} if path else {}) )
-    service = Service(bus, password_store)
+    pass_store = PassStore(**({'path': path} if path else {}) )
+    service = Service(bus, pass_store)
 
     mainloop = GLib.MainLoop()
     GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM,

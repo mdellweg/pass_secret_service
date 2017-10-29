@@ -1,6 +1,5 @@
 # Implementation of the org.freedesktop.Secret.Collection interface
 
-import uuid
 import pydbus
 from pydbus.generic import signal
 from gi.repository import GLib
@@ -48,23 +47,28 @@ class Collection(object):
     """
 
     @debug_me
-    def __init__(self, parent, properties):
+    def __init__(self, parent, properties=None, name=None):
+        self.properties = properties or {}
         self.parent = parent
         self.bus = self.parent.bus
-        if LABEL_INTERFACE in properties.keys():
-            self.label = str(properties[LABEL_INTERFACE])
-            self.name = self.label
+        self.pass_store = self.parent.pass_store
+        if name:
+            # collection exists with given Name
+            self.name = name
         else:
-            self.label = ''
-            self.name = str(uuid.uuid4()).replace('-', '_')
+            # collection must be created
+            self.name = self.pass_store.create_collection(self.properties)
+        self.properties = self.pass_store.get_collection_properties(self.name)
         self.path = base_path + '/collection/' + self.name
         self.pub_ref = self.bus.register_object(self.path, self, None)
+        self.parent.collections.append(self.path)
 
     @debug_me
     def Delete(self):
         self.pub_ref.unregister()
-        # TODO actually delete
-        # TODO signal deletion
+        self.parent.collections.remove(self.path)
+        self.pass_store.delete_collection(self.name)
+        self.parent.CollectionDeleted(self.path)
         prompt = "/"
         return prompt
 
@@ -90,12 +94,12 @@ class Collection(object):
 
     @property
     def Label(self):
-        return self.label
+        return str(self.properties.get(LABEL_INTERFACE))
 
     @Label.setter
     def Label(self, label):
-        if self.label != label:
-            self.label = label
+        if self.Label != label:
+            self.properties = self.pass_store.update_collection_properties(self.name, {LABEL_INTERFACE: label})
 
     @property
     def Locked(self):

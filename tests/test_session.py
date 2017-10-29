@@ -5,7 +5,7 @@ import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
 
-class TestSecretStorage(unittest.TestCase):
+class TestSession(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
         self.service = self.bus.get(bus_name)

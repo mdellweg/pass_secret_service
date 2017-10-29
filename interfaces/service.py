@@ -7,7 +7,7 @@ from gi.repository import GLib
 from common.debug import debug_me
 from common.exceptions import DBusErrorNotSupported
 from common.names import bus_name, base_path
-from interfaces.collection import Collection
+from interfaces.collection import Collection, LABEL_INTERFACE
 from interfaces.session import Session
 
 class Service:
@@ -69,11 +69,13 @@ class Service:
     """
 
     @debug_me
-    def __init__(self, bus, password_store):
+    def __init__(self, bus, pass_store):
         self.bus = bus
-        self.password_store = password_store
+        self.pass_store = pass_store
         self.pub_ref = bus.publish(bus_name, self)
         self.collections = []
+        for collection_name in self.pass_store.get_collections():
+            Collection(self, name=collection_name)
 
     @debug_me
     def OpenSession(self, algorithm, input):
@@ -86,8 +88,7 @@ class Service:
 
     @debug_me
     def CreateCollection(self, properties, alias):
-        collection = Collection(self, properties)
-        self.collections.append(collection.path)
+        collection = Collection(self, properties=properties)
         self.CollectionCreated(collection.path)
         prompt = '/'
         return collection.path, prompt
