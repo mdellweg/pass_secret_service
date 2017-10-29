@@ -3,12 +3,15 @@
 import signal
 import pydbus
 from gi.repository import GLib
+import click
+
 from interfaces.service import Service
 
 def sigterm(mainloop):
     mainloop.quit()
 
-if __name__ == '__main__':  # pragma: no branch
+@click.command()
+def main():
     bus = pydbus.SessionBus()
     service = Service(bus)
 
@@ -17,3 +20,6 @@ if __name__ == '__main__':  # pragma: no branch
                          sigterm, mainloop)
 
     mainloop.run()
+
+if __name__ == '__main__':  # pragma: no branch
+    main()
