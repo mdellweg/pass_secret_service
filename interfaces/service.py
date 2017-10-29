@@ -69,8 +69,9 @@ class Service:
     """
 
     @debug_me
-    def __init__(self, bus):
+    def __init__(self, bus, password_store):
         self.bus = bus
+        self.password_store = password_store
         self.pub_ref = bus.publish(bus_name, self)
         self.collections = []
 

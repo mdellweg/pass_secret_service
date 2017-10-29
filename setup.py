@@ -7,6 +7,7 @@ setup(  # pragma: no cover
     install_requires=[
         'pydbus',
         'click',
+        'pypass',
     ],
     entry_points='''
         [console_scripts]
