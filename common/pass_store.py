@@ -11,6 +11,18 @@ class PassStore(PasswordStore):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.base_path = os.path.join(self.path, self.PREFIX)
 
+    def get_aliases(self):
+        try:
+            with open(os.path.join(self.base_path, '.aliases'), 'r') as fp:
+                aliases = json.load(fp)
+        except:
+            aliases = {}
+        return aliases or {}
+
+    def save_aliases(self, aliases):
+        with open(os.path.join(self.base_path, '.aliases'), 'w') as fp:
+            json.dump(aliases, fp)
+
     def get_collections(self):
         return ( entry.name for entry in os.scandir(self.base_path) if entry.is_dir() )
 

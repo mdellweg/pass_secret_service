@@ -17,6 +17,7 @@ setup()
 	PASSWORD_STORE_DIR=$REALDIR/../.test-password-store
 	PASSWORD_STORE_DIR=$PASSWORD_STORE_DIR pass init $GPG_ID
 	echo "password" | PASSWORD_STORE_DIR=$PASSWORD_STORE_DIR pass insert -e secret_service/default/somewhere.example.com
+	echo '{"default": "default"}' > $PASSWORD_STORE_DIR/secret_service/.aliases
 
 	# run service
 	PASSWORD_STORE_DIR=$PASSWORD_STORE_DIR python3 -m coverage run $REALDIR/../pass_secret_service.py --path $PASSWORD_STORE_DIR &

@@ -68,14 +68,45 @@ class Service:
       </node>
     """
 
+    def _set_alias(self, alias, collection):
+        changed = False
+        old_alias = self.aliases.get(alias)
+        if old_alias:
+            if old_alias['collection'] == collection:
+                return changed
+            old_alias['pub_ref'].unregister()
+            self.aliases.pop(alias)
+            changed = True
+        if collection:
+            alias_path = base_path + '/aliases/' + alias
+            alias_ref = self.bus.register_object(alias_path, collection, None)
+            self.aliases[alias] = { 'collection': collection, 'pub_ref': alias_ref }
+            changed = True
+        return changed
+
+    def _write_aliases(self):
+        self.pass_store.save_aliases({key: value['collection'].name for key, value in self.aliases.items()})
+
+    def _get_collection_from_path(self, collection_path):
+        if collection_path == '/':
+            return None
+        collection = self.collections.get(collection_path.split('/')[-1])
+        if collection and collection.path != collection_path:
+            raise DBusErrorNoSuchObject()
+        return collection
+
     @debug_me
     def __init__(self, bus, pass_store):
         self.bus = bus
         self.pass_store = pass_store
-        self.pub_ref = bus.publish(bus_name, self)
-        self.collections = []
+        self.pub_ref = self.bus.publish(bus_name, self)
+        self.collections = {}
+        self.aliases = {}
         for collection_name in self.pass_store.get_collections():
             Collection(self, name=collection_name)
+        for alias, collection_name in self.pass_store.get_aliases().items():
+            self._set_alias(alias, self.collections.get(collection_name))
+        self._write_aliases()
 
     @debug_me
     def OpenSession(self, algorithm, input):
@@ -89,6 +120,9 @@ class Service:
     @debug_me
     def CreateCollection(self, properties, alias):
         collection = Collection(self, properties=properties)
+        if alias != '':
+            self._set_alias(alias, collection)
+            self._write_aliases()
         self.CollectionCreated(collection.path)
         prompt = '/'
         return collection.path, prompt
@@ -117,11 +151,13 @@ class Service:
 
     @debug_me
     def ReadAlias(self, name):
-        collection = '/'
-        return collection
+        alias = self.aliases.get(name)
+        return alias['collection'].path if alias else '/'
 
     @debug_me
     def SetAlias(self, name, collection):
+        self._set_alias(name, self._get_collection_from_path(collection))
+        self._write_aliases()
         return None
 
     CollectionCreated = signal()
@@ -131,4 +167,4 @@ class Service:
     @property
     @debug_me
     def Collections(self):
-        return self.collections
+        return [ collection.path for collection in self.collections.values() ]

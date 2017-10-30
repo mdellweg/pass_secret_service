@@ -61,14 +61,19 @@ class Collection(object):
         self.properties = self.pass_store.get_collection_properties(self.name)
         self.path = base_path + '/collection/' + self.name
         self.pub_ref = self.bus.register_object(self.path, self, None)
-        self.parent.collections.append(self.path)
+        self.parent.collections[self.name] = self
 
     @debug_me
     def Delete(self):
         self.pub_ref.unregister()
-        self.parent.collections.remove(self.path)
+        self.parent.collections.pop(self.name)
         self.pass_store.delete_collection(self.name)
         self.parent.CollectionDeleted(self.path)
+        deleted_aliases = [ name for name, alias in self.parent.aliases.items() if alias['collection'] == self ]
+        for name in deleted_aliases:
+            self.parent._set_alias(name, None)
+        if len(deleted_aliases) > 0:
+            self.parent._write_aliases()
         prompt = "/"
         return prompt
 
