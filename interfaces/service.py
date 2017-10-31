@@ -111,7 +111,7 @@ class Service:
         self.collections = {}
         self.aliases = {}
         for collection_name in self.pass_store.get_collections():
-            Collection(self, name=collection_name)
+            Collection(self, collection_name)
         self._set_aliases({ alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items() })
 
     @debug_me
@@ -125,7 +125,7 @@ class Service:
 
     @debug_me
     def CreateCollection(self, properties, alias):
-        collection = Collection(self, properties=properties)
+        collection = Collection._create(self, properties)
         if alias != '':
             self._set_aliases({ alias: collection })
         self.CollectionCreated(collection.path)

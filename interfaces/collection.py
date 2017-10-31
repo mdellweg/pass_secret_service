@@ -46,31 +46,32 @@ class Collection(object):
       </node>
     """
 
+    @classmethod
+    def _create(cls, service, properties=None):
+        if properties is None:
+            properties = {}
+        name = service.pass_store.create_collection(properties)
+        return cls(service, name)
+
     @debug_me
-    def __init__(self, parent, properties=None, name=None):
-        self.properties = properties or {}
-        self.parent = parent
-        self.bus = self.parent.bus
-        self.pass_store = self.parent.pass_store
-        if name:
-            # collection exists with given Name
-            self.name = name
-        else:
-            # collection must be created
-            self.name = self.pass_store.create_collection(self.properties)
+    def __init__(self, service, name):
+        self.service = service
+        self.bus = self.service.bus
+        self.pass_store = self.service.pass_store
+        self.name = name
         self.properties = self.pass_store.get_collection_properties(self.name)
         self.path = base_path + '/collection/' + self.name
         self.pub_ref = self.bus.register_object(self.path, self, None)
-        self.parent.collections[self.name] = self
+        self.service.collections[self.name] = self
 
     @debug_me
     def Delete(self):
         self.pub_ref.unregister()
-        self.parent.collections.pop(self.name)
+        self.service.collections.pop(self.name)
         self.pass_store.delete_collection(self.name)
-        self.parent.CollectionDeleted(self.path)
-        deleted_aliases = [ name for name, alias in self.parent.aliases.items() if alias['collection'] == self ]
-        self.parent._set_aliases({ name: None for name in deleted_aliases })
+        self.service.CollectionDeleted(self.path)
+        deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
+        self.service._set_aliases({ name: None for name in deleted_aliases })
         prompt = "/"
         return prompt
 
