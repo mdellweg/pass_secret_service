@@ -87,6 +87,14 @@ class Service:
     def _write_aliases(self):
         self.pass_store.save_aliases({key: value['collection'].name for key, value in self.aliases.items()})
 
+    def _set_aliases(self, alias_dict):
+        changed = False
+        for alias, collection in alias_dict.items():
+            if self._set_alias(alias, collection):
+                changed = True
+        if changed:
+            self._write_aliases()
+
     def _get_collection_from_path(self, collection_path):
         if collection_path == '/':
             return None
@@ -104,9 +112,7 @@ class Service:
         self.aliases = {}
         for collection_name in self.pass_store.get_collections():
             Collection(self, name=collection_name)
-        for alias, collection_name in self.pass_store.get_aliases().items():
-            self._set_alias(alias, self.collections.get(collection_name))
-        self._write_aliases()
+        self._set_aliases({ alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items() })
 
     @debug_me
     def OpenSession(self, algorithm, input):
@@ -121,8 +127,7 @@ class Service:
     def CreateCollection(self, properties, alias):
         collection = Collection(self, properties=properties)
         if alias != '':
-            self._set_alias(alias, collection)
-            self._write_aliases()
+            self._set_aliases({ alias: collection })
         self.CollectionCreated(collection.path)
         prompt = '/'
         return collection.path, prompt
@@ -156,8 +161,7 @@ class Service:
 
     @debug_me
     def SetAlias(self, name, collection):
-        self._set_alias(name, self._get_collection_from_path(collection))
-        self._write_aliases()
+        self._set_aliases({ name: self._get_collection_from_path(collection) })
         return None
 
     CollectionCreated = signal()

@@ -70,10 +70,7 @@ class Collection(object):
         self.pass_store.delete_collection(self.name)
         self.parent.CollectionDeleted(self.path)
         deleted_aliases = [ name for name, alias in self.parent.aliases.items() if alias['collection'] == self ]
-        for name in deleted_aliases:
-            self.parent._set_alias(name, None)
-        if len(deleted_aliases) > 0:
-            self.parent._write_aliases()
+        self.parent._set_aliases({ name: None for name in deleted_aliases })
         prompt = "/"
         return prompt
 
