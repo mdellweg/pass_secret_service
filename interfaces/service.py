@@ -5,7 +5,7 @@ from pydbus.generic import signal
 from gi.repository import GLib
 
 from common.debug import debug_me
-from common.exceptions import DBusErrorNotSupported
+from common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
 from common.names import bus_name, base_path
 from interfaces.collection import Collection, LABEL_INTERFACE
 from interfaces.session import Session
@@ -68,6 +68,37 @@ class Service:
       </node>
     """
 
+    # finder
+    @staticmethod
+    def _get_relative_object_path(object_path):
+        if object_path.startswith('/org/freedesktop/secrets/'):
+            return object_path[25:]
+        else:
+            raise DBusErrorNoSuchObject()
+
+    def _get_collection_from_path(self, collection_path):
+        if collection_path == '/':
+            return None
+        path_components = self._get_relative_object_path(collection_path).split('/')
+        if len(path_components) != 2 or path_components[0] != 'collection':
+            raise DBusErrorNoSuchObject()
+        collection = self.collections.get(path_components[1])
+        if collection is None:
+            raise DBusErrorNoSuchObject()
+        return collection
+
+    def _get_session_from_path(self, session_path):
+        if session_path == '/':
+            return None
+        path_components = self._get_relative_object_path(session_path).split('/')
+        if len(path_components) != 2 or path_components[0] != 'session':
+            raise DBusErrorNoSuchObject()
+        session = self.sessions.get(path_components[1])
+        if session is None:
+            raise DBusErrorNoSession()
+        return session
+
+    # Alias helpers
     def _set_alias(self, alias, collection):
         changed = False
         old_alias = self.aliases.get(alias)
@@ -95,31 +126,34 @@ class Service:
         if changed:
             self._write_aliases()
 
-    def _get_collection_from_path(self, collection_path):
-        if collection_path == '/':
-            return None
-        collection = self.collections.get(collection_path.split('/')[-1])
-        if collection and collection.path != collection_path:
-            raise DBusErrorNoSuchObject()
-        return collection
+    # secret helper
+    def _encode_secret(self, session_path, password):
+        session = self._get_session_from_path(session_path)
+        return session._encode_secret(password)
+
+    def _decode_secret(self, secret):
+        session = self._get_session_from_path(secret[0])
+        return session._decode_secret(secret)
 
     @debug_me
     def __init__(self, bus, pass_store):
         self.bus = bus
         self.pass_store = pass_store
-        self.pub_ref = self.bus.publish(bus_name, self)
+        self.sessions = {}
         self.collections = {}
         self.aliases = {}
         for collection_name in self.pass_store.get_collections():
             Collection(self, collection_name)
         self._set_aliases({ alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items() })
+        # Register with dbus
+        self.pub_ref = self.bus.publish(bus_name, self)
 
     @debug_me
     def OpenSession(self, algorithm, input):
         if algorithm != 'plain':
             raise DBusErrorNotSupported('only algorithm plain is implemented')
         output = GLib.Variant('s', '')
-        new_session = Session(self.bus)
+        new_session = Session(self)
         result = new_session.path
         return output, result
 

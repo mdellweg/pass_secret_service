@@ -16,5 +16,8 @@ class TestSecretStorage(unittest.TestCase):
         collection.set_label('default1')
         self.assertEqual('default1', collection.get_label())
 
+    def test_search_item(self):
+        secretstorage.search_items(self.bus, {})
+
 if __name__ == "__main__":
     unittest.main()

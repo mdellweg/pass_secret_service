@@ -61,15 +61,25 @@ class Collection(object):
         self.name = name
         self.properties = self.pass_store.get_collection_properties(self.name)
         self.path = base_path + '/collection/' + self.name
+        self.items = {}
+        for item_name in self.pass_store.get_items(self.name):
+            Item(self, item_name)
+        # Register with dbus
         self.pub_ref = self.bus.register_object(self.path, self, None)
+        # Register with service
         self.service.collections[self.name] = self
 
     @debug_me
     def Delete(self):
-        self.pub_ref.unregister()
+        # Deregister from servise
         self.service.collections.pop(self.name)
+        # Deregister from dbus
+        self.pub_ref.unregister()
+        # Remove from disk
         self.pass_store.delete_collection(self.name)
+        # Signal deletion
         self.service.CollectionDeleted(self.path)
+        # Remove stale aliases
         deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
         self.service._set_aliases({ name: None for name in deleted_aliases })
         prompt = "/"
@@ -82,10 +92,11 @@ class Collection(object):
 
     @debug_me
     def CreateItem(self, properties, secret, replace):
-        new_item = Item(self.bus, self.label, 'item1')
-        item = new_item.path
+        # TODO replace
+        password = self.service._decode_secret(secret)
+        item = Item._create(self, password, properties)
         prompt = '/'
-        return item, prompt
+        return item.path, prompt
 
     ItemCreated = signal()
     ItemDeleted = signal()
@@ -93,7 +104,7 @@ class Collection(object):
 
     @property
     def Items(self):
-        return []
+        return [ item.path for item in self.items.values() ]
 
     @property
     def Label(self):

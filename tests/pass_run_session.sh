@@ -14,9 +14,9 @@ teardown()
 setup()
 {
 	# prepare test data
-	PASSWORD_STORE_DIR=$REALDIR/../.test-password-store
+	PASSWORD_STORE_DIR=$(realpath $REALDIR/../.test-password-store)
 	PASSWORD_STORE_DIR=$PASSWORD_STORE_DIR pass init $GPG_ID
-	echo "password" | PASSWORD_STORE_DIR=$PASSWORD_STORE_DIR pass insert -e secret_service/default/somewhere.example.com
+	echo "password" | PASSWORD_STORE_DIR=$PASSWORD_STORE_DIR pass insert -e secret_service/default/aaaa
 	echo '{"default": "default"}' > $PASSWORD_STORE_DIR/secret_service/.aliases
 
 	# run service
