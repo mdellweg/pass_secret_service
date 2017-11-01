@@ -1,6 +1,5 @@
 # Implementation of the org.freedesktop.Secret.Collection interface
 
-import uuid
 import pydbus
 from pydbus.generic import signal
 from gi.repository import GLib
@@ -47,24 +46,42 @@ class Collection(object):
       </node>
     """
 
+    @classmethod
+    def _create(cls, service, properties=None):
+        if properties is None:
+            properties = {}
+        name = service.pass_store.create_collection(properties)
+        return cls(service, name)
+
     @debug_me
-    def __init__(self, parent, properties):
-        self.parent = parent
-        self.bus = self.parent.bus
-        if LABEL_INTERFACE in properties.keys():
-            self.label = str(properties[LABEL_INTERFACE])
-            self.name = self.label
-        else:
-            self.label = ''
-            self.name = str(uuid.uuid4()).replace('-', '_')
+    def __init__(self, service, name):
+        self.service = service
+        self.bus = self.service.bus
+        self.pass_store = self.service.pass_store
+        self.name = name
+        self.properties = self.pass_store.get_collection_properties(self.name)
         self.path = base_path + '/collection/' + self.name
+        self.items = {}
+        for item_name in self.pass_store.get_items(self.name):
+            Item(self, item_name)
+        # Register with dbus
         self.pub_ref = self.bus.register_object(self.path, self, None)
+        # Register with service
+        self.service.collections[self.name] = self
 
     @debug_me
     def Delete(self):
+        # Deregister from servise
+        self.service.collections.pop(self.name)
+        # Deregister from dbus
         self.pub_ref.unregister()
-        # TODO actually delete
-        # TODO signal deletion
+        # Remove from disk
+        self.pass_store.delete_collection(self.name)
+        # Signal deletion
+        self.service.CollectionDeleted(self.path)
+        # Remove stale aliases
+        deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
+        self.service._set_aliases({ name: None for name in deleted_aliases })
         prompt = "/"
         return prompt
 
@@ -75,10 +92,11 @@ class Collection(object):
 
     @debug_me
     def CreateItem(self, properties, secret, replace):
-        new_item = Item(self.bus, self.label, 'item1')
-        item = new_item.path
+        # TODO replace
+        password = self.service._decode_secret(secret)
+        item = Item._create(self, password, properties)
         prompt = '/'
-        return item, prompt
+        return item.path, prompt
 
     ItemCreated = signal()
     ItemDeleted = signal()
@@ -86,16 +104,16 @@ class Collection(object):
 
     @property
     def Items(self):
-        return []
+        return [ item.path for item in self.items.values() ]
 
     @property
     def Label(self):
-        return self.label
+        return str(self.properties.get(LABEL_INTERFACE))
 
     @Label.setter
     def Label(self, label):
-        if self.label != label:
-            self.label = label
+        if self.Label != label:
+            self.properties = self.pass_store.update_collection_properties(self.name, {LABEL_INTERFACE: label})
 
     @property
     def Locked(self):

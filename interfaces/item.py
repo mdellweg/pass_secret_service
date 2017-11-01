@@ -7,6 +7,9 @@ from common.debug import debug_me
 
 from common.names import base_path
 
+LABEL_INTERFACE = 'org.freedesktop.Secret.Item.Label'
+ATTRIBUTES_INTERFACE = 'org.freedesktop.Secret.Item.Attributes'
+
 class Item(object):
     """
       <node>
@@ -30,28 +33,49 @@ class Item(object):
       </node>
     """
 
+    @classmethod
+    def _create(cls, collection, password, properties=None):
+        if properties is None:
+            properties = {}  # pragma: no cover
+        name = collection.service.pass_store.create_item(collection.name, password, properties)
+        return cls(collection, name)
+
     @debug_me
-    def __init__(self, bus, collection_label, label):
-        self.bus = bus
-        self.label = label
-        self.path = base_path + '/collection/' + collection_label + '/' + label
-        self.pub_ref = bus.register_object(self.path, self, None)
+    def __init__(self, collection, name):
+        self.collection = collection
+        self.service = self.collection.service
+        self.bus = self.service.bus
+        self.pass_store = self.service.pass_store
+        self.name = name
+        self.properties = self.pass_store.get_item_properties(self.collection.name, self.name)
+        self.path = self.collection.path + '/' + self.name
+        # Register with dbus
+        self.pub_ref = self.bus.register_object(self.path, self, None)
+        # Register with collection
+        self.collection.items[self.name] = self
 
     @debug_me
     def Delete(self):
+        # Deregister from collection
+        self.collection.items.pop(self.name)
+        # Deregister from dbus
         self.pub_ref.unregister()
-        # TODO actually delete
-        # TODO signal deletion
-        prompt = "/"
+        # Remove from disk
+        self.service.pass_store.delete_item(self.collection.name, self.name)
+        # Signal deletion
+        self.collection.ItemDeleted(self.path)
+        prompt = '/'
         return prompt
 
     @debug_me
     def GetSecret(self, session):
-        secret = ''
-        return secret
+        password = self.pass_store.get_item_password(self.collection.name, self.name)
+        return self.service._encode_secret(session, password)
 
     @debug_me
     def SetSecret(self, secret):
+        password = self.service._decode_secret(secret)
+        self.pass_store.set_item_password(self.collection.name, self.name, password)
         return None
 
     @property
@@ -60,23 +84,21 @@ class Item(object):
 
     @property
     def Attributes(self):
-        return {}
+        return self.properties.get(ATTRIBUTES_INTERFACE)
 
     @Attributes.setter
     def Attributes(self, attributes):
-        pass
+        if self.Attributes != attributes:
+            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ATTRIBUTES_INTERFACE: attributes})
 
     @property
     def Label(self):
-        return self.label
+        return str(self.properties.get(LABEL_INTERFACE))
 
     @Label.setter
     def Label(self, label):
-        if self.label != label:
-            self.pub_ref.unregister()
-            self.label = label
-            self.path = base_path + '/collection/' + label
-            self.pub_ref = bus.register_object(self.path, self, None)
+        if self.Label != label:
+            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {LABEL_INTERFACE: label})
 
     @property
     def Created(self):

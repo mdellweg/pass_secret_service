@@ -1,0 +1,4 @@
+setuptools
+pydbus
+click
+pypass

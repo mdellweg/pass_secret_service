@@ -17,13 +17,28 @@ class Session(SerialMixin):
       </node>
     """
 
+    # secrethelper
+    def _encode_secret(self, password):
+        return (self.path, [], password.encode('utf8'), 'text/plain')
+
+    def _decode_secret(self, secret):
+        return bytearray(secret[2]).decode('utf8')
+
     @debug_me
-    def __init__(self, bus):
-        self.bus = bus
-        self.path = '{}/session/session{}'.format(base_path, self._serial())
-        self.pub_ref = bus.register_object(self.path, self, None)
+    def __init__(self, service):
+        self.service = service
+        self.bus = self.service.bus
+        self.name = 'session{}'.format(self._serial())
+        self.path = '{}/session/{}'.format(base_path, self.name)
+        # Register with dbus
+        self.pub_ref = self.bus.register_object(self.path, self, None)
+        # Register with service
+        self.service.sessions[self.name] = self
 
     @debug_me
     def Close(self):
+        # Deregister from service
+        self.service.sessions.pop(self.name)
+        # Deregister from dbus
         self.pub_ref.unregister()
         return None
