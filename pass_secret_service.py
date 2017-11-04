@@ -19,10 +19,11 @@ def main(path):
     service = Service(bus, pass_store)
 
     mainloop = GLib.MainLoop()
-    GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM,
-                         sigterm, mainloop)
+    GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, sigterm, mainloop)
 
     mainloop.run()
 
 if __name__ == '__main__':  # pragma: no branch
     main()
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

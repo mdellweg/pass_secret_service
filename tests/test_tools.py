@@ -20,3 +20,5 @@ class TestTools(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

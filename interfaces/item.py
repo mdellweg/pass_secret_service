@@ -107,3 +107,5 @@ class Item(object):
     @property
     def Modified(self):
         return 0
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

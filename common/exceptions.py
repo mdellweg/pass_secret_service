@@ -18,3 +18,5 @@ DBusErrorNoSession.__name__ = "org.freedesktop.Secret.Error.NoSession"
 class DBusErrorNoSuchObject(Exception):
     pass
 DBusErrorNoSuchObject.__name__ = "org.freedesktop.Secret.Error.NoSuchObject"
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

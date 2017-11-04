@@ -16,7 +16,7 @@ class PassStore:
         try:
             with open(os.path.join(self.base_path, '.aliases'), 'r') as fp:
                 aliases = json.load(fp)
-        except:
+        except:  # pragma: no cover
             aliases = {}
         return aliases or {}
 
@@ -76,7 +76,7 @@ class PassStore:
     def get_item_password(self, collection_name, name):
         return self._store.get_decypted_password(os.path.join(self.PREFIX, collection_name, name))
         # use the next line as soon, as this typo is fixed
-        return self._store.get_decrypted_password(os.path.join(self.PREFIX, collection_name, name))
+        # return self._store.get_decrypted_password(os.path.join(self.PREFIX, collection_name, name))
 
     def save_item_properties(self, collection_name, name, properties):
         with open(os.path.join(self.base_path, collection_name, name) + '.properties', 'w') as fp:
@@ -95,3 +95,5 @@ class PassStore:
         properties.update(new_properties)
         self.save_item_properties(collection_name, name, properties)
         return properties
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

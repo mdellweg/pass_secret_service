@@ -34,3 +34,5 @@ if os.environ.get('DEBUG_PASS_SECRET_SERVICE') :  # pragma: no branch
     debug_me = debug_me_real  # pragma: no cover
 else:
     debug_me = debug_me_fake  # pragma: no cover
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

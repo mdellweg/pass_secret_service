@@ -38,6 +38,7 @@ class TestCollection(unittest.TestCase):
         collection2 = self.bus.get(bus_name, collection_path2)
         self.service.SetAlias(ALIAS, collection_path1)
         self.service.SetAlias(ALIAS, collection_path2)
+        self.service.SetAlias(ALIAS, collection_path2)
         self.assertEqual(collection_path2, self.service.ReadAlias(ALIAS))
         collection = self.bus.get(bus_name, '/org/freedesktop/secrets/aliases/' + ALIAS)
         self.assertEqual(TRACER, collection.Label)
@@ -48,3 +49,5 @@ class TestCollection(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :
