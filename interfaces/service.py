@@ -79,10 +79,13 @@ class Service:
     def _get_collection_from_path(self, collection_path):
         if collection_path == '/':
             return None
+        collection = None
         path_components = self._get_relative_object_path(collection_path).split('/')
-        if len(path_components) != 2 or path_components[0] != 'collection':
-            raise DBusErrorNoSuchObject()
-        collection = self.collections.get(path_components[1])
+        if len(path_components) == 2:
+            if path_components[0] == 'collection':
+                collection = self.collections.get(path_components[1])
+            elif path_components[0] == 'aliases':
+                collection = self.aliases.get(path_components[1], {'collection': None})['collection']
         if collection is None:
             raise DBusErrorNoSuchObject()
         return collection
@@ -182,7 +185,7 @@ class Service:
         locked = []
         for collection in self.collections.values():
             if collection.Locked:
-                locked.append(collection.SearchItems(attributes))
+                locked.extend(collection.SearchItems(attributes))
             else:
                 unlocked.extend(collection.SearchItems(attributes))
         return unlocked, locked
@@ -190,12 +193,35 @@ class Service:
     @debug_me
     def Unlock(self, objects):
         unlocked = []
+        for obj_path in objects:
+            try:
+                collection = self._get_collection_from_path(obj_path)
+                collection._unlock()
+                unlocked.append(obj_path)
+                continue
+            except DBusErrorNoSuchObject:
+                pass
+            try:
+                item = self._get_item_from_path(obj_path)
+                item.collection._unlock()
+                unlocked.append(obj_path)
+                continue
+            except DBusErrorNoSuchObject:
+                pass
         prompt = '/'
         return unlocked, prompt
 
     @debug_me
     def Lock(self, objects):
         locked = []
+        for obj_path in objects:
+            try:
+                collection = self._get_collection_from_path(obj_path)
+                collection._lock()
+                locked.append(obj_path)
+                continue
+            except DBusErrorNoSuchObject:
+                pass
         prompt = '/'
         return locked, prompt
 

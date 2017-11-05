@@ -51,6 +51,12 @@ class Collection(object):
         service.CollectionCreated(instance.path)
         return instance
 
+    def _lock(self):
+        self.locked = True
+
+    def _unlock(self):
+        self.locked = False
+
     @debug_me
     def __init__(self, service, name):
         self.service = service
@@ -59,6 +65,7 @@ class Collection(object):
         self.name = name
         self.properties = self.pass_store.get_collection_properties(self.name)
         self.path = base_path + '/collection/' + self.name
+        self.locked = False
         self.items = {}
         for item_name in self.pass_store.get_items(self.name):
             Item(self, item_name)
@@ -129,7 +136,7 @@ class Collection(object):
 
     @property
     def Locked(self):
-        return False
+        return self.locked
 
     @property
     def Created(self):
