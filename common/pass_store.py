@@ -29,8 +29,12 @@ class PassStore:
         return ( entry.name for entry in os.scandir(self.base_path) if entry.is_dir() )
 
     def create_collection(self, properties):
-        name = str(uuid.uuid4()).replace('-', '_')  # TODO: check for crashes
-        os.mkdir(os.path.join(self.base_path, name))
+        while True:
+            name = str(uuid.uuid4()).replace('-', '_')
+            collection_path = os.path.join(self.base_path, name)
+            if not os.path.exists(collection_path):  # check for clashes  # pragma: no branch
+                break
+        os.mkdir(collection_path)
         self.save_collection_properties(name, properties)
         return name
 
@@ -61,7 +65,11 @@ class PassStore:
         return ( entry.name[:-4] for entry in os.scandir(collection_path) if entry.is_file() and entry.name.endswith('.gpg') )
 
     def create_item(self, collection_name, password , properties):
-        name = str(uuid.uuid4()).replace('-', '_')  # TODO: check for crashes
+        while True:
+            name = str(uuid.uuid4()).replace('-', '_')
+            item_path = os.path.join(self.base_path, collection_name, name)
+            if not os.path.exists(item_path):  # check for clashes  # pragma: no branch
+                break
         self.set_item_password(collection_name, name, password)
         self.save_item_properties(collection_name, name, properties)
         return name
