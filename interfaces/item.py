@@ -38,7 +38,9 @@ class Item(object):
         if properties is None:
             properties = {}  # pragma: no cover
         name = collection.service.pass_store.create_item(collection.name, password, properties)
-        return cls(collection, name)
+        instance = cls(collection, name)
+        collection.ItemCreated(instance.path)
+        return instance
 
     def _has_attributes(self, attributes):
         attrs = self.Attributes
@@ -83,7 +85,7 @@ class Item(object):
     def SetSecret(self, secret):
         password = self.service._decode_secret(secret)
         self.pass_store.set_item_password(self.collection.name, self.name, password)
-        return None
+        self.collection.ItemChanged(self.path)
 
     @property
     def Locked(self):
@@ -97,6 +99,7 @@ class Item(object):
     def Attributes(self, attributes):
         if self.Attributes != attributes:
             self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ATTRIBUTES_INTERFACE: attributes})
+            self.collection.ItemChanged(self.path)
 
     @property
     def Label(self):
@@ -106,6 +109,7 @@ class Item(object):
     def Label(self, label):
         if self.Label != label:
             self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {LABEL_INTERFACE: label})
+            self.collection.ItemChanged(self.path)
 
     @property
     def Created(self):
