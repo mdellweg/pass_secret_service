@@ -40,6 +40,13 @@ class Item(object):
         name = collection.service.pass_store.create_item(collection.name, password, properties)
         return cls(collection, name)
 
+    def _has_attributes(self, attributes):
+        attrs = self.Attributes
+        for key, value in attributes.items():
+            if key not in attrs or attrs[key] != value:
+                return False
+        return True
+
     @debug_me
     def __init__(self, collection, name):
         self.collection = collection
@@ -84,7 +91,7 @@ class Item(object):
 
     @property
     def Attributes(self):
-        return self.properties.get(ATTRIBUTES_INTERFACE)
+        return self.properties.get(ATTRIBUTES_INTERFACE, {})
 
     @Attributes.setter
     def Attributes(self, attributes):
@@ -93,7 +100,7 @@ class Item(object):
 
     @property
     def Label(self):
-        return str(self.properties.get(LABEL_INTERFACE))
+        return str(self.properties.get(LABEL_INTERFACE, ''))
 
     @Label.setter
     def Label(self, label):

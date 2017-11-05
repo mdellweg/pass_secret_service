@@ -170,6 +170,11 @@ class Service:
     def SearchItems(self, attributes):
         unlocked = []
         locked = []
+        for collection in self.collections.values():
+            if collection.Locked:
+                locked.append(collection.SearchItems(attributes))
+            else:
+                unlocked.extend(collection.SearchItems(attributes))
         return unlocked, locked
 
     @debug_me
