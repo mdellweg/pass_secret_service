@@ -115,16 +115,13 @@ class Service:
             changed = True
         return changed
 
-    def _write_aliases(self):
-        self.pass_store.save_aliases({key: value['collection'].name for key, value in self.aliases.items()})
-
     def _set_aliases(self, alias_dict):
         changed = False
         for alias, collection in alias_dict.items():
             if self._set_alias(alias, collection):
                 changed = True
         if changed:
-            self._write_aliases()
+            self.pass_store.save_aliases({key: value['collection'].name for key, value in self.aliases.items()})
 
     # secret helper
     def _encode_secret(self, session_path, password):
@@ -162,7 +159,6 @@ class Service:
         collection = Collection._create(self, properties)
         if alias != '':
             self._set_aliases({ alias: collection })
-        self.CollectionCreated(collection.path)
         prompt = '/'
         return collection.path, prompt
 
@@ -188,8 +184,10 @@ class Service:
         locked = []
         prompt = '/'
         return locked, prompt
+
     @debug_me
     def GetSecrets(self, items, session):
+        # TODO
         secrets = {}
         return secrets
 
@@ -201,7 +199,6 @@ class Service:
     @debug_me
     def SetAlias(self, name, collection):
         self._set_aliases({ name: self._get_collection_from_path(collection) })
-        return None
 
     CollectionCreated = signal()
     CollectionDeleted = signal()

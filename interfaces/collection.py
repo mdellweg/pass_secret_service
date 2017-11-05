@@ -51,7 +51,9 @@ class Collection(object):
         if properties is None:
             properties = {}
         name = service.pass_store.create_collection(properties)
-        return cls(service, name)
+        instance = cls(service, name)
+        service.CollectionCreated(instance.path)
+        return instance
 
     @debug_me
     def __init__(self, service, name):
@@ -71,6 +73,10 @@ class Collection(object):
 
     @debug_me
     def Delete(self):
+        # TODO Delete items
+        # Remove stale aliases
+        deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
+        self.service._set_aliases({ name: None for name in deleted_aliases })
         # Deregister from servise
         self.service.collections.pop(self.name)
         # Deregister from dbus
@@ -79,9 +85,6 @@ class Collection(object):
         self.pass_store.delete_collection(self.name)
         # Signal deletion
         self.service.CollectionDeleted(self.path)
-        # Remove stale aliases
-        deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
-        self.service._set_aliases({ name: None for name in deleted_aliases })
         prompt = "/"
         return prompt
 
@@ -117,6 +120,7 @@ class Collection(object):
     def Label(self, label):
         if self.Label != label:
             self.properties = self.pass_store.update_collection_properties(self.name, {LABEL_INTERFACE: label})
+            self.service.CollectionChanged(self.path)
 
     @property
     def Locked(self):
