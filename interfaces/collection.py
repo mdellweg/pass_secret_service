@@ -88,6 +88,9 @@ class Collection(object):
     @debug_me
     def SearchItems(self, attributes):
         results = []
+        for item in self.items.values():
+            if item._has_attributes(attributes):
+                results.append(item.path)
         return results
 
     @debug_me

@@ -17,7 +17,18 @@ class TestSecretStorage(unittest.TestCase):
         self.assertEqual('default1', collection.get_label())
 
     def test_search_item(self):
-        secretstorage.search_items(self.bus, {})
+        collection = secretstorage.get_default_collection(self.bus)
+        collection.create_item('label1', {'attr1': 'val1', 'attr2': 'val2'}, 'secret passphrase')
+        collection.create_item('label2', {'attr1': 'val1_tilt', 'attr2': 'val2'}, 'secret passphrase')
+        collection.create_item('label3', {'attr1_tilt': 'val1', 'attr2': 'val2'}, 'secret passphrase')
+        item_iter = secretstorage.search_items(self.bus, {'attr1': 'val1'})
+        labels = [i.get_label() for i in item_iter]
+        item_iter = collection.search_items({'attr1': 'val1'})
+        coll_labels = [i.get_label() for i in item_iter]
+        self.assertEqual(labels, coll_labels)
+        self.assertIn('label1', labels)
+        self.assertNotIn('label2', labels)
+        self.assertNotIn('label3', labels)
 
 if __name__ == "__main__":
     unittest.main()
