@@ -49,6 +49,9 @@ class Item(object):
                 return False
         return True
 
+    def _get_password(self):
+        return self.pass_store.get_item_password(self.collection.name, self.name)
+
     @debug_me
     def __init__(self, collection, name):
         self.collection = collection
@@ -78,8 +81,7 @@ class Item(object):
 
     @debug_me
     def GetSecret(self, session):
-        password = self.pass_store.get_item_password(self.collection.name, self.name)
-        return self.service._encode_secret(session, password)
+        return self.service._encode_secret(session, self._get_password())
 
     @debug_me
     def SetSecret(self, secret):

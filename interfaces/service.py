@@ -87,6 +87,20 @@ class Service:
             raise DBusErrorNoSuchObject()
         return collection
 
+    def _get_item_from_path(self, item_path):
+        if item_path == '/':
+            return None
+        path_components = self._get_relative_object_path(item_path).split('/')
+        if len(path_components) != 3 or path_components[0] != 'collection':
+            raise DBusErrorNoSuchObject()
+        collection = self.collections.get(path_components[1])
+        if collection is None:
+            raise DBusErrorNoSuchObject()
+        item = collection.items.get(path_components[2])
+        if item is None:
+            raise DBusErrorNoSuchObject()
+        return item
+
     def _get_session_from_path(self, session_path):
         if session_path == '/':
             return None
@@ -187,8 +201,12 @@ class Service:
 
     @debug_me
     def GetSecrets(self, items, session):
-        # TODO
         secrets = {}
+        session = self._get_session_from_path(session)
+        for item_path in items:
+            item = self._get_item_from_path(item_path)
+            password = item._get_password()
+            secrets[item_path] = session._encode_secret(password)
         return secrets
 
     @debug_me
