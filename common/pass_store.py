@@ -10,6 +10,8 @@ class PassStore:
     def __init__(self, *args, **kwargs):
         self._store = PasswordStore(*args, **kwargs)
         self.base_path = os.path.join(self._store.path, self.PREFIX)
+        if not os.path.exists(self.base_path):
+            os.makedirs(self.base_path)
 
     # Aliases
     def get_aliases(self):
