@@ -5,10 +5,8 @@ from pydbus.generic import signal
 from gi.repository import GLib
 from common.debug import debug_me
 
-from common.names import base_path
+from common.names import base_path, COLLECTION_LABEL, ITEM_LABEL, ITEM_ATTRIBUTES
 from interfaces.item import Item
-
-LABEL_INTERFACE = 'org.freedesktop.Secret.Collection.Label'
 
 class Collection(object):
     """
@@ -98,10 +96,17 @@ class Collection(object):
 
     @debug_me
     def CreateItem(self, properties, secret, replace):
-        # TODO replace
+        prompt = '/'
+        if replace:
+            attributes = properties.get(ITEM_ATTRIBUTES, {})
+            repl_items = self.SearchItems(attributes)
+            if len(repl_items):
+                item = self.service._get_item_from_path(repl_items[0])
+                item.Label = properties.get(ITEM_LABEL, '')
+                item.SetSecret(secret)
+                return item.path, prompt
         password = self.service._decode_secret(secret)
         item = Item._create(self, password, properties)
-        prompt = '/'
         return item.path, prompt
 
     ItemCreated = signal()
@@ -114,12 +119,12 @@ class Collection(object):
 
     @property
     def Label(self):
-        return str(self.properties.get(LABEL_INTERFACE))
+        return str(self.properties.get(COLLECTION_LABEL))
 
     @Label.setter
     def Label(self, label):
         if self.Label != label:
-            self.properties = self.pass_store.update_collection_properties(self.name, {LABEL_INTERFACE: label})
+            self.properties = self.pass_store.update_collection_properties(self.name, {COLLECTION_LABEL: label})
             self.service.CollectionChanged(self.path)
 
     @property

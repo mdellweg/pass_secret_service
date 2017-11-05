@@ -3,12 +3,9 @@
 import pydbus
 from pydbus.generic import signal
 from gi.repository import GLib
+
 from common.debug import debug_me
-
-from common.names import base_path
-
-LABEL_INTERFACE = 'org.freedesktop.Secret.Item.Label'
-ATTRIBUTES_INTERFACE = 'org.freedesktop.Secret.Item.Attributes'
+from common.names import base_path, ITEM_LABEL, ITEM_ATTRIBUTES
 
 class Item(object):
     """
@@ -95,22 +92,22 @@ class Item(object):
 
     @property
     def Attributes(self):
-        return self.properties.get(ATTRIBUTES_INTERFACE, {})
+        return self.properties.get(ITEM_ATTRIBUTES, {})
 
     @Attributes.setter
     def Attributes(self, attributes):
         if self.Attributes != attributes:
-            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ATTRIBUTES_INTERFACE: attributes})
+            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ITEM_ATTRIBUTES: attributes})
             self.collection.ItemChanged(self.path)
 
     @property
     def Label(self):
-        return str(self.properties.get(LABEL_INTERFACE, ''))
+        return str(self.properties.get(ITEM_LABEL, ''))
 
     @Label.setter
     def Label(self, label):
         if self.Label != label:
-            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {LABEL_INTERFACE: label})
+            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ITEM_LABEL: label})
             self.collection.ItemChanged(self.path)
 
     @property

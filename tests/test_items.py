@@ -88,6 +88,15 @@ class TestCollection(unittest.TestCase):
         collection.Delete()
         self.assertNotIn(item_path, self.service.SearchItems({})[0])
 
+    def test_replace_item(self):
+        properties = {
+            'org.freedesktop.Secret.Item.Label': GLib.Variant('s', 'test_label'),
+            'org.freedesktop.Secret.Item.Attributes': GLib.Variant('a{ss}', {'lookup_attr': 'replace_test'}),
+        }
+        item1_path, prompt_path = self.default_collection.CreateItem(properties, (self.session_path, b'', b'password', 'text/plain'), True)
+        item2_path, prompt_path = self.default_collection.CreateItem(properties, (self.session_path, b'', b'password', 'text/plain'), True)
+        self.assertEqual(item1_path, item2_path)
+
 if __name__ == "__main__":
     unittest.main()
 

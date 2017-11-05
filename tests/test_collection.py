@@ -19,6 +19,13 @@ class TestCollection(unittest.TestCase):
         collection.Delete()
         self.assertNotIn(collection_path, self.service.Collections)
 
+    def test_properties(self):
+        collection = self.bus.get(bus_name, '/org/freedesktop/secrets/aliases/default')
+        collection.Label
+        collection.Locked
+        collection.Created
+        collection.Modified
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -7,7 +7,7 @@ from gi.repository import GLib
 from common.debug import debug_me
 from common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
 from common.names import bus_name, base_path
-from interfaces.collection import Collection, LABEL_INTERFACE
+from interfaces.collection import Collection
 from interfaces.session import Session
 
 class Service:
