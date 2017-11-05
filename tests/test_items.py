@@ -65,6 +65,29 @@ class TestCollection(unittest.TestCase):
             item_path, prompt_path = self.default_collection.CreateItem({}, ('/tilt' + self.session_path, b'', b'password', 'text/plain'), False)
         self.assertIn('NoSuchObject', str(context.exception))
 
+    def test_item_lookup(self):
+        attributes = {'lookup_attr1': '1', 'lookup_attr2': '2'}
+        properties = {
+            'org.freedesktop.Secret.Item.Label': GLib.Variant('s', 'lookup_label1'),
+            'org.freedesktop.Secret.Item.Attributes': GLib.Variant('a{ss}', attributes),
+        }
+        item_path, prompt_path = self.default_collection.CreateItem(properties, (self.session_path, b'', b'password', 'text/plain'), False)
+        self.assertIn(item_path, self.service.SearchItems({'lookup_attr1': '1'})[0])
+        self.assertIn(item_path, self.service.SearchItems({'lookup_attr1': '1', 'lookup_attr2': '2'})[0])
+        self.assertNotIn(item_path, self.service.SearchItems({'lookup_attr1': '1', 'lookup_attr2': '0'})[0])
+        self.assertNotIn(item_path, self.service.SearchItems({'lookup_attr1': '1', 'lookup_attr3': '3'})[0])
+
+    def test_item_in_deleted_collection(self):
+        collection_path, promt_path = self.service.CreateCollection({}, 'delete_alias')
+        collection = self.bus.get(bus_name, collection_path)
+        properties = {
+            'org.freedesktop.Secret.Item.Label': GLib.Variant('s', 'delete_label1'),
+        }
+        item_path, prompt_path = collection.CreateItem(properties, (self.session_path, b'', b'password', 'text/plain'), False)
+        self.assertIn(item_path, self.service.SearchItems({})[0])
+        collection.Delete()
+        self.assertNotIn(item_path, self.service.SearchItems({})[0])
+
 if __name__ == "__main__":
     unittest.main()
 

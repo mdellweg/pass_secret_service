@@ -47,9 +47,7 @@ class Collection(object):
     """
 
     @classmethod
-    def _create(cls, service, properties=None):
-        if properties is None:
-            properties = {}
+    def _create(cls, service, properties):
         name = service.pass_store.create_collection(properties)
         instance = cls(service, name)
         service.CollectionCreated(instance.path)
@@ -73,7 +71,9 @@ class Collection(object):
 
     @debug_me
     def Delete(self):
-        # TODO Delete items
+        # Delete items
+        for item in list(self.items.values()):
+            item.Delete()
         # Remove stale aliases
         deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
         self.service._set_aliases({ name: None for name in deleted_aliases })
