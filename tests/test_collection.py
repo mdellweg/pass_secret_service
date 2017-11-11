@@ -26,6 +26,14 @@ class TestCollection(unittest.TestCase):
         collection.Created
         collection.Modified
 
+    def test_lock_unlock(self):
+        collection_path, prompt_path = self.service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_lock_label')}, '')
+        collection = self.bus.get(bus_name, collection_path)
+        self.service.Lock([collection_path])
+        self.assertTrue(collection.Locked)
+        self.service.Unlock([collection_path])
+        self.assertFalse(collection.Locked)
+
 if __name__ == "__main__":
     unittest.main()
 

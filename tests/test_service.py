@@ -28,6 +28,10 @@ class TestService(unittest.TestCase):
         collection1 = self.bus.get(bus_name, collection_path1)
         collection2 = self.bus.get(bus_name, collection_path2)
         self.service.SetAlias(ALIAS, collection_path1)
+        self.assertEqual(collection_path1, self.service.ReadAlias(ALIAS))
+        self.service.SetAlias(ALIAS, '/');
+        self.assertEqual('/', self.service.ReadAlias(ALIAS))
+        self.service.SetAlias(ALIAS, collection_path1)
         self.service.SetAlias(ALIAS, collection_path2)
         self.service.SetAlias(ALIAS, collection_path2)
         self.assertEqual(collection_path2, self.service.ReadAlias(ALIAS))
