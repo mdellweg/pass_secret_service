@@ -6,7 +6,7 @@ from gi.repository import GLib
 
 from common.debug import debug_me
 from common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
-from common.names import bus_name, base_path
+from common.names import bus_name, base_path, COLLECTION_LABEL
 from interfaces.collection import Collection
 from interfaces.session import Session
 
@@ -149,6 +149,15 @@ class Service:
         session = self._get_session_from_path(secret[0])
         return session._decode_secret(secret)
 
+    def _unregister(self):
+        for session in self.sessions.values():
+            session._unregister()
+        for alias in self.aliases.values():
+            alias['pub_ref'].unregister()
+        for collection in self.collections.values():
+            collection._unregister()
+        self.pub_ref.unpublish()
+
     @debug_me
     def __init__(self, bus, pass_store):
         self.bus = bus
@@ -159,6 +168,9 @@ class Service:
         for collection_name in self.pass_store.get_collections():
             Collection(self, collection_name)
         self._set_aliases({ alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items() })
+        # Create default collection if need be
+        if 'default' not in self.aliases:
+            self.CreateCollection({COLLECTION_LABEL: 'default collection'}, 'default')
         # Register with dbus
         self.pub_ref = self.bus.publish(bus_name, self)
 

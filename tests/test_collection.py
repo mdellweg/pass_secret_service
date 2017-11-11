@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+from tests.helper import with_service
 import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
@@ -8,30 +9,35 @@ from common.names import bus_name, base_path
 class TestCollection(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
-        self.service = self.bus.get(bus_name)
 
+    @with_service
     def test_create_delete_collection(self):
-        collection_path, prompt_path = self.service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_collection_label')}, 'test_alias')
+        service = self.bus.get(bus_name)
+        collection_path, prompt_path = service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_collection_label')}, 'test_alias')
         collection = self.bus.get(bus_name, collection_path)
         self.assertEqual(collection.Label, 'test_collection_label')
-        self.assertIn(collection_path, self.service.Collections)
-        self.assertEqual(collection_path, self.service.ReadAlias('test_alias'))
+        self.assertIn(collection_path, service.Collections)
+        self.assertEqual(collection_path, service.ReadAlias('test_alias'))
         collection.Delete()
-        self.assertNotIn(collection_path, self.service.Collections)
+        self.assertNotIn(collection_path, service.Collections)
 
+    @with_service
     def test_properties(self):
+        service = self.bus.get(bus_name)
         collection = self.bus.get(bus_name, '/org/freedesktop/secrets/aliases/default')
         collection.Label
         collection.Locked
         collection.Created
         collection.Modified
 
+    @with_service
     def test_lock_unlock(self):
-        collection_path, prompt_path = self.service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_lock_label')}, '')
+        service = self.bus.get(bus_name)
+        collection_path, prompt_path = service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_lock_label')}, '')
         collection = self.bus.get(bus_name, collection_path)
-        self.service.Lock([collection_path])
+        service.Lock([collection_path])
         self.assertTrue(collection.Locked)
-        self.service.Unlock([collection_path])
+        service.Unlock([collection_path])
         self.assertFalse(collection.Locked)
 
 if __name__ == "__main__":

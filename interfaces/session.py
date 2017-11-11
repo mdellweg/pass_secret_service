@@ -24,6 +24,9 @@ class Session(SerialMixin):
     def _decode_secret(self, secret):
         return bytearray(secret[2]).decode('utf8')
 
+    def _unregister(self):
+        self.pub_ref.unregister()
+
     @debug_me
     def __init__(self, service):
         self.service = service
@@ -40,7 +43,7 @@ class Session(SerialMixin):
         # Deregister from service
         self.service.sessions.pop(self.name)
         # Deregister from dbus
-        self.pub_ref.unregister()
+        self._unregister()
         return None
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

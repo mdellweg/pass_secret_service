@@ -23,6 +23,8 @@ def main(path):
 
     mainloop.run()
 
+    service._unregister()
+
 if __name__ == '__main__':  # pragma: no branch
     main()
 

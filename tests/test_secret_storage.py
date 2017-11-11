@@ -3,12 +3,15 @@
 # Run (integration) tests with external library secretstorage
 
 import unittest
+from tests.helper import with_service
 import secretstorage
+
 
 class TestSecretStorage(unittest.TestCase):
     def setUp(self):
         self.bus = secretstorage.dbus_init()
 
+    @with_service
     def test_default_collection(self):
         collection = secretstorage.get_default_collection(self.bus)
         collection.set_label('default')
@@ -16,6 +19,7 @@ class TestSecretStorage(unittest.TestCase):
         collection.set_label('default1')
         self.assertEqual('default1', collection.get_label())
 
+    @with_service
     def test_search_item(self):
         collection = secretstorage.get_default_collection(self.bus)
         collection.create_item('label1', {'attr1': 'val1', 'attr2': 'val2'}, 'secret passphrase')

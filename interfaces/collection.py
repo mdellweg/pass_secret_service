@@ -57,6 +57,11 @@ class Collection(object):
     def _unlock(self):
         self.locked = False
 
+    def _unregister(self):
+        for item in self.items.values():
+            item._unregister()
+        self.pub_ref.unregister()
+
     @debug_me
     def __init__(self, service, name):
         self.service = service
@@ -85,7 +90,7 @@ class Collection(object):
         # Deregister from servise
         self.service.collections.pop(self.name)
         # Deregister from dbus
-        self.pub_ref.unregister()
+        self._unregister()
         # Remove from disk
         self.pass_store.delete_collection(self.name)
         # Signal deletion

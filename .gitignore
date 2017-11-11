@@ -3,3 +3,5 @@ __pycache__
 .*.swp
 .coverage
 *.egg-info
+tests/.gnupghome/
+tests/.test-password-store/
