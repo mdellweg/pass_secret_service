@@ -5,6 +5,7 @@ setup(  # pragma: no cover
     version=0.1,
     py_modules='pass_secret_service',
     install_requires=[
+        'decorator',
         'pydbus',
         'click',
         'pypass',
