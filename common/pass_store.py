@@ -4,6 +4,7 @@ import uuid
 import simplejson as json
 from pypass import PasswordStore
 
+
 class PassStore:
     PREFIX = 'secret_service'
 
@@ -18,7 +19,7 @@ class PassStore:
         try:
             with open(os.path.join(self.base_path, '.aliases'), 'r') as fp:
                 aliases = json.load(fp)
-        except:  # pragma: no cover
+        except Exception:  # pragma: no cover
             aliases = {}
         return aliases or {}
 
@@ -28,7 +29,7 @@ class PassStore:
 
     # Collections (Directories)
     def get_collections(self):
-        return ( entry.name for entry in os.scandir(self.base_path) if entry.is_dir() )
+        return (entry.name for entry in os.scandir(self.base_path) if entry.is_dir())
 
     def create_collection(self, properties):
         while True:
@@ -51,7 +52,7 @@ class PassStore:
         try:
             with open(os.path.join(self.base_path, name, '.properties'), 'r') as fp:
                 properties = json.load(fp)
-        except:
+        except Exception:
             properties = {}
         return properties or {}
 
@@ -64,9 +65,9 @@ class PassStore:
     # Items
     def get_items(self, collection_name):
         collection_path = os.path.join(self.base_path, collection_name)
-        return ( entry.name[:-4] for entry in os.scandir(collection_path) if entry.is_file() and entry.name.endswith('.gpg') )
+        return (entry.name[:-4] for entry in os.scandir(collection_path) if entry.is_file() and entry.name.endswith('.gpg'))
 
-    def create_item(self, collection_name, password , properties):
+    def create_item(self, collection_name, password, properties):
         while True:
             name = str(uuid.uuid4()).replace('-', '_')
             item_path = os.path.join(self.base_path, collection_name, name)
@@ -96,7 +97,7 @@ class PassStore:
         try:
             with open(os.path.join(self.base_path, collection_name, name) + '.properties', 'r') as fp:
                 properties = json.load(fp)
-        except:
+        except Exception:
             properties = {}
         return properties or {}
 

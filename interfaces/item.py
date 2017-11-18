@@ -7,6 +7,7 @@ from gi.repository import GLib
 from common.debug import debug_me
 from common.names import base_path, ITEM_LABEL, ITEM_ATTRIBUTES
 
+
 class Item(object):
     """
       <node>
@@ -49,6 +50,9 @@ class Item(object):
     def _get_password(self):
         return self.pass_store.get_item_password(self.collection.name, self.name)
 
+    def _unregister(self):
+        self.pub_ref.unregister()
+
     @debug_me
     def __init__(self, collection, name):
         self.collection = collection
@@ -68,7 +72,7 @@ class Item(object):
         # Deregister from collection
         self.collection.items.pop(self.name)
         # Deregister from dbus
-        self.pub_ref.unregister()
+        self._unregister()
         # Remove from disk
         self.service.pass_store.delete_item(self.collection.name, self.name)
         # Signal deletion

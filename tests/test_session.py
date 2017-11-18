@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 
 import unittest
+from tests.helper import with_service
 import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
 
+
 class TestSession(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
-        self.service = self.bus.get(bus_name)
 
+    @with_service
     def test_session_plain(self):
-        output, session_path = self.service.OpenSession('plain', GLib.Variant('s', ''))
+        service = self.bus.get(bus_name)
+        output, session_path = service.OpenSession('plain', GLib.Variant('s', ''))
         session = self.bus.get(bus_name, session_path)
         session.Close()
 
+    @with_service
     def test_session_error(self):
+        service = self.bus.get(bus_name)
         with self.assertRaises(GLib.GError):
-            output, session_path = self.service.OpenSession('wrong plain', GLib.Variant('s', ''))
+            output, session_path = service.OpenSession('wrong plain', GLib.Variant('s', ''))
+
 
 if __name__ == "__main__":
     unittest.main()

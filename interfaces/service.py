@@ -6,9 +6,10 @@ from gi.repository import GLib
 
 from common.debug import debug_me
 from common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
-from common.names import bus_name, base_path
+from common.names import bus_name, base_path, COLLECTION_LABEL
 from interfaces.collection import Collection
 from interfaces.session import Session
+
 
 class Service:
     """
@@ -128,7 +129,7 @@ class Service:
         if collection:
             alias_path = base_path + '/aliases/' + alias
             alias_ref = self.bus.register_object(alias_path, collection, None)
-            self.aliases[alias] = { 'collection': collection, 'pub_ref': alias_ref }
+            self.aliases[alias] = {'collection': collection, 'pub_ref': alias_ref}
             changed = True
         return changed
 
@@ -149,6 +150,15 @@ class Service:
         session = self._get_session_from_path(secret[0])
         return session._decode_secret(secret)
 
+    def _unregister(self):
+        for session in self.sessions.values():
+            session._unregister()
+        for alias in self.aliases.values():
+            alias['pub_ref'].unregister()
+        for collection in self.collections.values():
+            collection._unregister()
+        self.pub_ref.unpublish()
+
     @debug_me
     def __init__(self, bus, pass_store):
         self.bus = bus
@@ -158,7 +168,10 @@ class Service:
         self.aliases = {}
         for collection_name in self.pass_store.get_collections():
             Collection(self, collection_name)
-        self._set_aliases({ alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items() })
+        self._set_aliases({alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items()})
+        # Create default collection if need be
+        if 'default' not in self.aliases:
+            self.CreateCollection({COLLECTION_LABEL: 'default collection'}, 'default')
         # Register with dbus
         self.pub_ref = self.bus.publish(bus_name, self)
 
@@ -175,7 +188,7 @@ class Service:
     def CreateCollection(self, properties, alias):
         collection = Collection._create(self, properties)
         if alias != '':
-            self._set_aliases({ alias: collection })
+            self._set_aliases({alias: collection})
         prompt = '/'
         return collection.path, prompt
 
@@ -242,7 +255,7 @@ class Service:
 
     @debug_me
     def SetAlias(self, name, collection):
-        self._set_aliases({ name: self._get_collection_from_path(collection) })
+        self._set_aliases({name: self._get_collection_from_path(collection)})
 
     CollectionCreated = signal()
     CollectionDeleted = signal()
@@ -251,6 +264,6 @@ class Service:
     @property
     @debug_me
     def Collections(self):
-        return [ collection.path for collection in self.collections.values() ]
+        return [collection.path for collection in self.collections.values()]
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

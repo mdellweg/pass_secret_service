@@ -1,9 +1,11 @@
 [run]
 branch = True
 source = .
+omit = tests/*
 
 [report]
 precision = 2
 skip_covered = True
 sort = cover
 show_missing = True
+fail_under = 90
