@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mdellweg/pass_secret_service.svg?branch=master)](https://travis-ci.org/mdellweg/pass_secret_service)
+
 # pass_secret_service
 
 ## Goal of the project
