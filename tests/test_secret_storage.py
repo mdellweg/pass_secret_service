@@ -34,6 +34,7 @@ class TestSecretStorage(unittest.TestCase):
         self.assertNotIn('label2', labels)
         self.assertNotIn('label3', labels)
 
+
 if __name__ == "__main__":
     unittest.main()
 

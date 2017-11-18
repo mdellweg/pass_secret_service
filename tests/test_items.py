@@ -6,6 +6,7 @@ import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
 
+
 class TestCollection(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
@@ -18,9 +19,9 @@ class TestCollection(unittest.TestCase):
         item_path, prompt_path = default_collection.CreateItem({}, (session_path, b'', b'password', 'text/plain'), False)
         item = self.bus.get(bus_name, item_path)
         self.assertIn(item_path, default_collection.Items)
-        self.assertEqual((session_path, list(b''),list(b'password'), 'text/plain'), item.GetSecret(session_path))
+        self.assertEqual((session_path, list(b''), list(b'password'), 'text/plain'), item.GetSecret(session_path))
         item.SetSecret((session_path, b'', b'secret', 'text/plain'))
-        self.assertEqual((session_path, list(b''),list(b'secret'), 'text/plain'), item.GetSecret(session_path))
+        self.assertEqual((session_path, list(b''), list(b'secret'), 'text/plain'), item.GetSecret(session_path))
         item.Delete()
         self.assertNotIn(item_path, default_collection.Items)
         self.bus.get(bus_name, session_path).Close()
@@ -32,9 +33,9 @@ class TestCollection(unittest.TestCase):
         dummy, session_path = service.OpenSession('plain', GLib.Variant('s', ''))
         item_path, prompt_path = default_collection.CreateItem({}, (session_path, b'', b'password', 'text/plain'), False)
         item = self.bus.get(bus_name, item_path)
-        self.assertEqual((session_path, list(b''),list(b'password'), 'text/plain'), item.GetSecret(session_path))
+        self.assertEqual((session_path, list(b''), list(b'password'), 'text/plain'), item.GetSecret(session_path))
         item.SetSecret((session_path, b'', b'secret', 'text/plain'))
-        self.assertEqual((session_path, list(b''),list(b'secret'), 'text/plain'), item.GetSecret(session_path))
+        self.assertEqual((session_path, list(b''), list(b'secret'), 'text/plain'), item.GetSecret(session_path))
         item.Delete()
         self.bus.get(bus_name, session_path).Close()
 
@@ -122,6 +123,7 @@ class TestCollection(unittest.TestCase):
         item2_path, prompt_path = default_collection.CreateItem(properties, (session_path, b'', b'password', 'text/plain'), True)
         self.assertEqual(item1_path, item2_path)
         self.bus.get(bus_name, session_path).Close()
+
 
 if __name__ == "__main__":
     unittest.main()

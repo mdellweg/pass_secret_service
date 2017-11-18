@@ -6,6 +6,7 @@ import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
 
+
 class TestService(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
@@ -37,7 +38,7 @@ class TestService(unittest.TestCase):
         collection2 = self.bus.get(bus_name, collection_path2)
         service.SetAlias(ALIAS, collection_path1)
         self.assertEqual(collection_path1, service.ReadAlias(ALIAS))
-        service.SetAlias(ALIAS, '/');
+        service.SetAlias(ALIAS, '/')
         self.assertEqual('/', service.ReadAlias(ALIAS))
         service.SetAlias(ALIAS, collection_path1)
         service.SetAlias(ALIAS, collection_path2)
@@ -61,6 +62,7 @@ class TestService(unittest.TestCase):
         self.assertEqual(2, len(secrets))
         self.assertEqual(list(b'password1'), secrets[item1_path][2])
         self.assertEqual(list(b'password2'), secrets[item2_path][2])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,6 +8,7 @@ from common.debug import debug_me
 from common.names import base_path, COLLECTION_LABEL, ITEM_LABEL, ITEM_ATTRIBUTES
 from interfaces.item import Item
 
+
 class Collection(object):
     """
       <node>
@@ -85,8 +86,8 @@ class Collection(object):
         for item in list(self.items.values()):
             item.Delete()
         # Remove stale aliases
-        deleted_aliases = [ name for name, alias in self.service.aliases.items() if alias['collection'] == self ]
-        self.service._set_aliases({ name: None for name in deleted_aliases })
+        deleted_aliases = [name for name, alias in self.service.aliases.items() if alias['collection'] == self]
+        self.service._set_aliases({name: None for name in deleted_aliases})
         # Deregister from servise
         self.service.collections.pop(self.name)
         # Deregister from dbus
@@ -127,7 +128,7 @@ class Collection(object):
 
     @property
     def Items(self):
-        return [ item.path for item in self.items.values() ]
+        return [item.path for item in self.items.values()]
 
     @property
     def Label(self):

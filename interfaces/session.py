@@ -8,6 +8,7 @@ from common.debug import debug_me
 from common.names import base_path
 from common.tools import SerialMixin
 
+
 class Session(SerialMixin):
     """
       <node>

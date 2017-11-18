@@ -6,6 +6,7 @@ import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
 
+
 class TestSession(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
@@ -22,6 +23,7 @@ class TestSession(unittest.TestCase):
         service = self.bus.get(bus_name)
         with self.assertRaises(GLib.GError):
             output, session_path = service.OpenSession('wrong plain', GLib.Variant('s', ''))
+
 
 if __name__ == "__main__":
     unittest.main()

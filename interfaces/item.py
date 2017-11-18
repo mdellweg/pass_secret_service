@@ -7,6 +7,7 @@ from gi.repository import GLib
 from common.debug import debug_me
 from common.names import base_path, ITEM_LABEL, ITEM_ATTRIBUTES
 
+
 class Item(object):
     """
       <node>

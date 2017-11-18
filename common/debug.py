@@ -4,14 +4,17 @@ import sys
 import os
 from decorator import decorator
 
+
 def eprint(*args, **kwargs):  # pragma: no cover
     """
         Print to stderr instead of stdout
     """
     print(*args, file=sys.stderr, **kwargs)
 
+
 def debug_me_fake(func):  # pragma: no cover
     return func
+
 
 @decorator
 def debug_me_real(func, *args, **kwargs):  # pragma: no cover
@@ -30,7 +33,7 @@ def debug_me_real(func, *args, **kwargs):  # pragma: no cover
         raise err
 
 
-if os.environ.get('DEBUG_PASS_SECRET_SERVICE') :  # pragma: no branch
+if os.environ.get('DEBUG_PASS_SECRET_SERVICE'):  # pragma: no branch
     debug_me = debug_me_real  # pragma: no cover
 else:
     debug_me = debug_me_fake  # pragma: no cover

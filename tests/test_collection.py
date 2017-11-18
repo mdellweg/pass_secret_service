@@ -6,6 +6,7 @@ import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
 
+
 class TestCollection(unittest.TestCase):
     def setUp(self):
         self.bus = pydbus.SessionBus()
@@ -13,7 +14,8 @@ class TestCollection(unittest.TestCase):
     @with_service
     def test_create_delete_collection(self):
         service = self.bus.get(bus_name)
-        collection_path, prompt_path = service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_collection_label')}, 'test_alias')
+        properties = {'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_collection_label')}
+        collection_path, prompt_path = service.CreateCollection(properties, 'test_alias')
         collection = self.bus.get(bus_name, collection_path)
         self.assertEqual(collection.Label, 'test_collection_label')
         self.assertIn(collection_path, service.Collections)
@@ -33,12 +35,14 @@ class TestCollection(unittest.TestCase):
     @with_service
     def test_lock_unlock(self):
         service = self.bus.get(bus_name)
-        collection_path, prompt_path = service.CreateCollection({'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_lock_label')}, '')
+        properties = {'org.freedesktop.Secret.Collection.Label': GLib.Variant('s', 'test_lock_label')}
+        collection_path, prompt_path = service.CreateCollection(properties, '')
         collection = self.bus.get(bus_name, collection_path)
         service.Lock([collection_path])
         self.assertTrue(collection.Locked)
         service.Unlock([collection_path])
         self.assertFalse(collection.Locked)
+
 
 if __name__ == "__main__":
     unittest.main()
