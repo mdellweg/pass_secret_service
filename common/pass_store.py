@@ -52,7 +52,7 @@ class PassStore:
         try:
             with open(os.path.join(self.base_path, name, '.properties'), 'r') as fp:
                 properties = json.load(fp)
-        except Exception:
+        except Exception:  # pragma: no cover
             properties = {}
         return properties or {}
 
@@ -97,7 +97,7 @@ class PassStore:
         try:
             with open(os.path.join(self.base_path, collection_name, name) + '.properties', 'r') as fp:
                 properties = json.load(fp)
-        except Exception:
+        except Exception:  # pragma: no cover
             properties = {}
         return properties or {}
 
