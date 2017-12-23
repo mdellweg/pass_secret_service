@@ -3,7 +3,7 @@ from setuptools import setup  # pragma: no cover
 setup(  # pragma: no cover
     name='pass_secret_service',
     version=0.1,
-    py_modules='pass_secret_service',
+    py_modules=['pass_secret_service'],
     install_requires=[
         'decorator',
         'pydbus',
