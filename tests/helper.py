@@ -21,18 +21,26 @@ class LoopThread(Thread):
         self.mainloop.quit()
 
 
+class ServiceEnv:
+    def __init__(self, clean=True):
+        path = os.environ['PASSWORD_STORE_DIR']
+        if clean and os.path.exists(os.path.join(path, 'secret_service')):
+            shutil.rmtree(os.path.join(path, 'secret_service'))
+        self.service = Service(pydbus.SessionBus(), PassStore(path=path))
+        self.loop_thread = LoopThread()
+
+    def __enter__(self):
+        self.loop_thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.loop_thread.exit()
+        self.loop_thread.join()
+        self.service._unregister()
+
+
 @decorator
 def with_service(f, *args, **kwargs):
-    path = os.environ['PASSWORD_STORE_DIR']
-    if os.path.exists(os.path.join(path, 'secret_service')):
-        shutil.rmtree(os.path.join(path, 'secret_service'))
-    service = Service(pydbus.SessionBus(), PassStore(path=path))
-    loop_thread = LoopThread()
-    loop_thread.start()
-    try:
+    with ServiceEnv():
         result = f(*args, **kwargs)
-    finally:
-        loop_thread.exit()
-        loop_thread.join()
-        service._unregister()
     return result

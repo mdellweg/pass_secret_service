@@ -106,8 +106,6 @@ class Service:
         return item
 
     def _get_session_from_path(self, session_path):
-        if session_path == '/':
-            return None
         path_components = self._get_relative_object_path(session_path).split('/')
         if len(path_components) != 2 or path_components[0] != 'session':
             raise DBusErrorNoSuchObject()
@@ -209,16 +207,18 @@ class Service:
         for obj_path in objects:
             try:
                 collection = self._get_collection_from_path(obj_path)
-                collection._unlock()
-                unlocked.append(obj_path)
-                continue
+                if collection:
+                    collection._unlock()
+                    unlocked.append(obj_path)
+                    continue
             except DBusErrorNoSuchObject:
                 pass
             try:
                 item = self._get_item_from_path(obj_path)
-                item.collection._unlock()
-                unlocked.append(obj_path)
-                continue
+                if item:
+                    item.collection._unlock()
+                    unlocked.append(obj_path)
+                    continue
             except DBusErrorNoSuchObject:
                 pass
         prompt = '/'
@@ -230,9 +230,10 @@ class Service:
         for obj_path in objects:
             try:
                 collection = self._get_collection_from_path(obj_path)
-                collection._lock()
-                locked.append(obj_path)
-                continue
+                if collection:
+                    collection._lock()
+                    locked.append(obj_path)
+                    continue
             except DBusErrorNoSuchObject:
                 pass
         prompt = '/'

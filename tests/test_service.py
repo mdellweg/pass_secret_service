@@ -63,6 +63,31 @@ class TestService(unittest.TestCase):
         self.assertEqual(list(b'password1'), secrets[item1_path][2])
         self.assertEqual(list(b'password2'), secrets[item2_path][2])
 
+    @with_service
+    def test_lock_unlock_collection(self):
+        service = self.bus.get(bus_name)
+        locked, dummy = service.Lock(['/org/freedesktop/secrets/aliases/default', '/org/freedesktop/secrets/aliases/nodefault', '/'])
+        self.assertIn('/org/freedesktop/secrets/aliases/default', locked)
+        self.assertNotIn('/org/freedesktop/secrets/aliases/nodefault', locked)
+        self.assertNotIn('/', locked)
+        unlocked, dummy = service.Unlock(['/org/freedesktop/secrets/aliases/default', '/org/freedesktop/secrets/aliases/nodefault', '/'])
+        self.assertIn('/org/freedesktop/secrets/aliases/default', unlocked)
+        self.assertNotIn('/org/freedesktop/secrets/aliases/nodefault', unlocked)
+        self.assertNotIn('/', unlocked)
+        unlocked, dummy = service.Unlock(['/org/freedesktop/secrets/collection/nodefault/test', service.ReadAlias('default') + '/test'])
+        self.assertEqual([], unlocked)
+        unlocked, dummy = service.Unlock(['/org/freedesktop/secrets/nocollection/default'])
+        self.assertEqual([], unlocked)
+
+    @with_service
+    def test_empty_session(self):
+        service = self.bus.get(bus_name)
+        collection = self.bus.get(bus_name, '/org/freedesktop/secrets/aliases/default')
+        with self.assertRaises(GLib.GError):
+            item1_path, prompt_path = collection.CreateItem({}, ('/', b'', b'password1', 'text/plain'), False)
+        with self.assertRaises(GLib.GError):
+            item1_path, prompt_path = collection.CreateItem({}, ('/org/freedesktop/secrets/nosession/test', b'', b'password1', 'text/plain'), False)
+
 
 if __name__ == "__main__":
     unittest.main()

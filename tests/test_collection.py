@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from tests.helper import with_service
+from tests.helper import ServiceEnv, with_service
 import pydbus
 from gi.repository import GLib
 from common.names import bus_name, base_path
@@ -42,6 +42,17 @@ class TestCollection(unittest.TestCase):
         self.assertTrue(collection.Locked)
         service.Unlock([collection_path])
         self.assertFalse(collection.Locked)
+
+    def test_persisted_item(self):
+        with ServiceEnv():
+            service = self.bus.get(bus_name)
+            default_collection = self.bus.get(bus_name, '/org/freedesktop/secrets/aliases/default')
+            dummy, session_path = service.OpenSession('plain', GLib.Variant('s', ''))
+            default_collection.CreateItem({}, (session_path, b'', b'password', 'text/plain'), True)
+        with ServiceEnv(clean=False):
+            service = self.bus.get(bus_name)
+            default_collection = self.bus.get(bus_name, '/org/freedesktop/secrets/aliases/default')
+            self.assertEqual(1, len(default_collection.Items))
 
 
 if __name__ == "__main__":
