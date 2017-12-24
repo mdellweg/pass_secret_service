@@ -2,9 +2,7 @@
 
 # pass_secret_service
 
-## Goal of the project
-
-try to expose libsecret dbus api with pass as backend
+expose the libsecret dbus api with pass as backend
 
 ## References
 
