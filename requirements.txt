@@ -1,5 +1,3 @@
-setuptools
-decorator
-pydbus
-click
-pypass
+.
+dbus-python
+secretstorage

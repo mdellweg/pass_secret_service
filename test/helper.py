@@ -4,8 +4,8 @@ import sys
 import shutil
 from threading import Thread
 import pydbus
-from interfaces.service import Service
-from common.pass_store import PassStore
+from pass_secret_service.interfaces.service import Service
+from pass_secret_service.common.pass_store import PassStore
 from gi.repository import GLib
 
 

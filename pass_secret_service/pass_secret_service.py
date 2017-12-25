@@ -5,8 +5,8 @@ import pydbus
 from gi.repository import GLib
 import click
 
-from interfaces.service import Service
-from common.pass_store import PassStore
+from pass_secret_service.interfaces.service import Service
+from pass_secret_service.common.pass_store import PassStore
 
 
 def sigterm(mainloop):

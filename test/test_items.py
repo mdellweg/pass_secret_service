@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import unittest
-from tests.helper import with_service
+from test.helper import with_service
 import pydbus
 from gi.repository import GLib
-from common.names import bus_name, base_path
+
+from pass_secret_service.common.names import bus_name, base_path
 
 
 class TestCollection(unittest.TestCase):

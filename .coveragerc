@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = .
-omit = tests/*
+omit = test/*,setup.py
 
 [report]
 precision = 2

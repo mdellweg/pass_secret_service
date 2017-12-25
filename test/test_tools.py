@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from common.tools import SerialMixin
+from pass_secret_service.common.tools import SerialMixin
 
 
 class TestTools(unittest.TestCase):

@@ -1,0 +1,1 @@
+from pass_secret_service.pass_secret_service import main

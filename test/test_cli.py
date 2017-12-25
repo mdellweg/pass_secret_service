@@ -2,18 +2,19 @@
 
 import unittest
 from unittest.mock import Mock, patch
-from tests.helper import with_service
+from test.helper import with_service
 import sys
 import os
 import signal
 from gi.repository import GLib
-import pass_secret_service
+
+from pass_secret_service import pass_secret_service
 
 
 class TestCollection(unittest.TestCase):
-    @patch('pass_secret_service.Service')
-    @patch('pass_secret_service.GLib.MainLoop')
-    @patch('pass_secret_service.GLib.unix_signal_add')
+    @patch('pass_secret_service.pass_secret_service.Service')
+    @patch('pass_secret_service.pass_secret_service.GLib.MainLoop')
+    @patch('pass_secret_service.pass_secret_service.GLib.unix_signal_add')
     @patch('sys.exit')
     @patch('sys.argv', ['pass_secret_service', '--path', os.environ['PASSWORD_STORE_DIR']])
     def test_command_line(self,

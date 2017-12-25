@@ -4,5 +4,5 @@ __pycache__
 .coverage
 *.egg-info
 build/
-tests/.gnupghome/
-tests/.test-password-store/
+test/.gnupghome/
+test/.test-password-store/
