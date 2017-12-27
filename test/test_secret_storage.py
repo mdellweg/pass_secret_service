@@ -26,13 +26,15 @@ class TestSecretStorage(unittest.TestCase):
         collection.create_item('label2', {'attr1': 'val1_tilt', 'attr2': 'val2'}, 'secret passphrase')
         collection.create_item('label3', {'attr1_tilt': 'val1', 'attr2': 'val2'}, 'secret passphrase')
         item_iter = secretstorage.search_items(self.bus, {'attr1': 'val1'})
-        labels = [i.get_label() for i in item_iter]
+        items = [i for i in item_iter]
+        labels = [i.get_label() for i in items]
         item_iter = collection.search_items({'attr1': 'val1'})
         coll_labels = [i.get_label() for i in item_iter]
         self.assertEqual(labels, coll_labels)
         self.assertIn('label1', labels)
         self.assertNotIn('label2', labels)
         self.assertNotIn('label3', labels)
+        self.assertEqual(b'secret passphrase', items[0].get_secret())
 
 
 if __name__ == "__main__":
