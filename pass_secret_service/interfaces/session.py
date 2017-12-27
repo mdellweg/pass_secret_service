@@ -3,10 +3,10 @@
 
 import pydbus
 from gi.repository import GLib
-from common.debug import debug_me
 
-from common.names import base_path
-from common.tools import SerialMixin
+from pass_secret_service.common.debug import debug_me
+from pass_secret_service.common.names import base_path
+from pass_secret_service.common.tools import SerialMixin
 
 
 class Session(SerialMixin):

@@ -4,11 +4,11 @@ import pydbus
 from pydbus.generic import signal
 from gi.repository import GLib
 
-from common.debug import debug_me
-from common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
-from common.names import bus_name, base_path, COLLECTION_LABEL
-from interfaces.collection import Collection
-from interfaces.session import Session
+from pass_secret_service.common.debug import debug_me
+from pass_secret_service.common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
+from pass_secret_service.common.names import bus_name, base_path, COLLECTION_LABEL
+from pass_secret_service.interfaces.collection import Collection
+from pass_secret_service.interfaces.session import Session
 
 
 class Service:

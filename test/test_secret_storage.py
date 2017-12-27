@@ -3,7 +3,7 @@
 # Run (integration) tests with external library secretstorage
 
 import unittest
-from tests.helper import with_service
+from test.helper import with_service
 import secretstorage
 
 
