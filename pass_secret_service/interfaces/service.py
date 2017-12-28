@@ -175,12 +175,16 @@ class Service:
 
     @debug_me
     def OpenSession(self, algorithm, input):
-        if algorithm != 'plain':
-            raise DBusErrorNotSupported('only algorithm plain is implemented')
-        output = GLib.Variant('s', '')
-        new_session = Session(self)
-        result = new_session.path
-        return output, result
+        if algorithm == 'plain':
+            output = GLib.Variant('s', '')
+            new_session = Session._create_plain(self)
+            result = new_session.path
+            return output, result
+        if algorithm == 'dh-ietf1024-sha256-aes128-cbc-pkcs7':
+            new_session, output = Session._create_dh(self, input)
+            result = new_session.path
+            return output, result
+        raise DBusErrorNotSupported('algorithm "{}" is not implemented'.format(algorithm))
 
     @debug_me
     def CreateCollection(self, properties, alias):
