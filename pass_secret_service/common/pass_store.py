@@ -85,9 +85,7 @@ class PassStore:
         self._store.insert_password(os.path.join(self.PREFIX, collection_name, name), password)
 
     def get_item_password(self, collection_name, name):
-        return self._store.get_decypted_password(os.path.join(self.PREFIX, collection_name, name))
-        # use the next line as soon, as this typo is fixed
-        # return self._store.get_decrypted_password(os.path.join(self.PREFIX, collection_name, name))
+        return self._store.get_decrypted_password(os.path.join(self.PREFIX, collection_name, name))
 
     def save_item_properties(self, collection_name, name, properties):
         with open(os.path.join(self.base_path, collection_name, name) + '.properties', 'w') as fp:
