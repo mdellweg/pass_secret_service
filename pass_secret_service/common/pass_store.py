@@ -5,6 +5,11 @@ import simplejson as json
 from pypass import PasswordStore
 
 
+# Work around a typo in pypass
+if not hasattr(PasswordStore, 'get_decrypted_password'):
+    PasswordStore.get_decrypted_password = PasswordStore.get_decypted_password
+
+
 class PassStore:
     PREFIX = 'secret_service'
 
