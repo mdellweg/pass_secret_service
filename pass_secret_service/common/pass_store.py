@@ -80,18 +80,21 @@ class PassStore:
     def delete_item(self, collection_name, name):
         os.remove(os.path.join(self.base_path, collection_name, name) + '.gpg')
         os.remove(os.path.join(self.base_path, collection_name, name) + '.properties')
+        # TODO git_add_and_commit
 
     def set_item_password(self, collection_name, name, password):
         self._store.insert_password(os.path.join(self.PREFIX, collection_name, name), password)
+        # TODO git_add_and_commit
 
     def get_item_password(self, collection_name, name):
-        return self._store.get_decypted_password(os.path.join(self.PREFIX, collection_name, name))
+        return self._store.get_decypted_password(os.path.join(self.PREFIX, collection_name, name), entry='password')
         # use the next line as soon, as this typo is fixed
         # return self._store.get_decrypted_password(os.path.join(self.PREFIX, collection_name, name))
 
     def save_item_properties(self, collection_name, name, properties):
         with open(os.path.join(self.base_path, collection_name, name) + '.properties', 'w') as fp:
             json.dump(properties, fp, sort_keys=True)
+        # TODO git_add_and_commit
 
     def get_item_properties(self, collection_name, name):
         try:
