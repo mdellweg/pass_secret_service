@@ -1,46 +1,52 @@
-from decorator import decorator
+import asyncio
 import os
-import sys
 import shutil
-from threading import Thread
-import pydbus
-from pass_secret_service.interfaces.service import Service
+import sys
+
+from dbus_next.aio import MessageBus
+from decorator import decorator
+
+from pass_secret_service.common.names import base_path, bus_name
 from pass_secret_service.common.pass_store import PassStore
-from gi.repository import GLib
+from pass_secret_service.interfaces.service import Service
 
 
-class LoopThread(Thread):
-    def __init__(self, *args, **kwargs):
-        super(LoopThread, self).__init__(*args, **kwargs)
-        self.mainloop = GLib.MainLoop()
+async def get_collection(bus, path):
+    introspection = await bus.introspect(bus_name, path)
+    obj = bus.get_proxy_object(bus_name, path, introspection)
+    return obj.get_interface('org.freedesktop.Secret.Collection')
 
-    def run(self):
-        self.mainloop.run()
 
-    def exit(self):
-        self.mainloop.quit()
+async def get_item(bus, path):
+    introspection = await bus.introspect(bus_name, path)
+    obj = bus.get_proxy_object(bus_name, path, introspection)
+    return obj.get_interface('org.freedesktop.Secret.Item')
+
+
+async def get_service(bus):
+    introspection = await bus.introspect(bus_name, base_path)
+    obj = bus.get_proxy_object(bus_name, base_path, introspection)
+    return obj.get_interface('org.freedesktop.Secret.Service')
+
+
+async def get_session(bus, path):
+    introspection = await bus.introspect(bus_name, path)
+    obj = bus.get_proxy_object(bus_name, path, introspection)
+    return obj.get_interface('org.freedesktop.Secret.Session')
 
 
 class ServiceEnv:
     def __init__(self, clean=True):
-        path = os.environ['PASSWORD_STORE_DIR']
-        if clean and os.path.exists(os.path.join(path, 'secret_service')):
-            shutil.rmtree(os.path.join(path, 'secret_service'))
-        self.service = Service(pydbus.SessionBus(), PassStore(path=path))
-        self.loop_thread = LoopThread()
+        self.path = os.environ['PASSWORD_STORE_DIR']
+        if clean and os.path.exists(os.path.join(self.path, 'secret_service')):
+            shutil.rmtree(os.path.join(self.path, 'secret_service'))
 
-    def __enter__(self):
-        self.loop_thread.start()
+    async def __aenter__(self):
+        self.bus = await MessageBus().connect()
+        await self.bus.request_name(bus_name)
+        self.service = Service(self.bus, PassStore(path=self.path))
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.loop_thread.exit()
-        self.loop_thread.join()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.service._unregister()
-
-
-@decorator
-def with_service(f, *args, **kwargs):
-    with ServiceEnv():
-        result = f(*args, **kwargs)
-    return result
+        self.bus.disconnect()

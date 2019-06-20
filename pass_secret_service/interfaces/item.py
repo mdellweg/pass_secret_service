@@ -1,43 +1,25 @@
 # Implementation of the org.freedesktop.Secret.Item interface
 
-import pydbus
-from pydbus.generic import signal
-from gi.repository import GLib
+from dbus_next.service import (
+    dbus_property,
+    method,
+    PropertyAccess,
+    ServiceInterface,
+)
 
-from pass_secret_service.common.debug import debug_me
 from pass_secret_service.common.names import base_path, ITEM_LABEL, ITEM_ATTRIBUTES
 
 
-class Item(object):
-    """
-      <node>
-        <interface name='org.freedesktop.Secret.Item'>
-          <method name='Delete'>
-            <arg type='o' name='prompt' direction='out'/>
-          </method>
-          <method name='GetSecret'>
-            <arg type='o' name='session' direction='in'/>
-            <arg type='(oayays)' name='secret' direction='out'/>
-          </method>
-          <method name='SetSecret'>
-            <arg type='(oayays)' name='secret' direction='in'/>
-          </method>
-          <property name='Locked' type='b' access='read'/>
-          <property name='Attributes' type='a{ss}' access='readwrite'/>
-          <property name='Label' type='s' access='readwrite'/>
-          <property name='Created' type='t' access='read'/>
-          <property name='Modified' type='t' access='read'/>
-        </interface>
-      </node>
-    """
-
+class Item(ServiceInterface):
     @classmethod
     def _create(cls, collection, password, properties=None):
         if properties is None:
-            properties = {}  # pragma: no cover
-        name = collection.service.pass_store.create_item(collection.name, password, properties)
-        instance = cls(collection, name)
-        collection.ItemCreated(instance.path)
+            properties = {}
+        else:
+            properties = {k: v.value for k, v in properties.items()}
+        id = collection.service.pass_store.create_item(collection.id, password, properties)
+        instance = cls(collection, id)
+        collection.ItemCreated(instance)
         return instance
 
     def _has_attributes(self, attributes):
@@ -48,78 +30,81 @@ class Item(object):
         return True
 
     def _get_password(self):
-        return self.pass_store.get_item_password(self.collection.name, self.name)
+        return self.pass_store.get_item_password(self.collection.id, self.id)
+
+    def _set_secret(self, secret):
+        password = self.service._decode_secret(secret)
+        self.pass_store.set_item_password(self.collection.id, self.id, password)
+        self.collection.ItemChanged(self)
 
     def _unregister(self):
-        self.pub_ref.unregister()
+        self.bus.unexport(self.path)
 
-    @debug_me
-    def __init__(self, collection, name):
+    def __init__(self, collection, id):
+        super().__init__('org.freedesktop.Secret.Item')
         self.collection = collection
         self.service = self.collection.service
         self.bus = self.service.bus
         self.pass_store = self.service.pass_store
-        self.name = name
-        self.properties = self.pass_store.get_item_properties(self.collection.name, self.name)
-        self.path = self.collection.path + '/' + self.name
+        self.id = id
+        self.properties = self.pass_store.get_item_properties(self.collection.id, self.id)
+        self.path = self.collection.path + '/' + self.id
         # Register with dbus
-        self.pub_ref = self.bus.register_object(self.path, self, None)
+        self.bus.export(self.path, self)
         # Register with collection
-        self.collection.items[self.name] = self
+        self.collection.items[self.id] = self
 
-    @debug_me
-    def Delete(self):
+    @method()
+    def Delete(self) -> 'o':
         # Deregister from collection
-        self.collection.items.pop(self.name)
+        self.collection.items.pop(self.id)
         # Deregister from dbus
         self._unregister()
         # Remove from disk
-        self.service.pass_store.delete_item(self.collection.name, self.name)
+        self.service.pass_store.delete_item(self.collection.id, self.id)
         # Signal deletion
-        self.collection.ItemDeleted(self.path)
+        self.collection.ItemDeleted(self)
         prompt = '/'
         return prompt
 
-    @debug_me
-    def GetSecret(self, session):
+    @method()
+    def GetSecret(self, session: 'o') -> '(oayays)':
         return self.service._encode_secret(session, self._get_password())
 
-    @debug_me
-    def SetSecret(self, secret):
-        password = self.service._decode_secret(secret)
-        self.pass_store.set_item_password(self.collection.name, self.name, password)
-        self.collection.ItemChanged(self.path)
+    @method()
+    def SetSecret(self, secret: '(oayays)'):
+        self._set_secret(secret)
 
-    @property
-    def Locked(self):
+    @dbus_property(access=PropertyAccess.READ)
+    def Locked(self) -> 'b':
         return False
 
-    @property
-    def Attributes(self):
+    @dbus_property(access=PropertyAccess.READWRITE)
+    def Attributes(self) -> 'a{ss}':
         return self.properties.get(ITEM_ATTRIBUTES, {})
 
     @Attributes.setter
-    def Attributes(self, attributes):
+    def Attributes(self, attributes: 'a{ss}'):
         if self.Attributes != attributes:
-            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ITEM_ATTRIBUTES: attributes})
-            self.collection.ItemChanged(self.path)
+            self.properties = self.pass_store.update_item_properties(self.collection.id, self.id, {ITEM_ATTRIBUTES: attributes})
+            self.collection.ItemChanged(self)
 
-    @property
-    def Label(self):
+    @dbus_property(access=PropertyAccess.READWRITE)
+    def Label(self) -> 's':
         return str(self.properties.get(ITEM_LABEL, ''))
 
     @Label.setter
-    def Label(self, label):
+    def Label(self, label: 's'):
         if self.Label != label:
-            self.properties = self.pass_store.update_item_properties(self.collection.name, self.name, {ITEM_LABEL: label})
-            self.collection.ItemChanged(self.path)
+            self.properties = self.pass_store.update_item_properties(self.collection.id, self.id, {ITEM_LABEL: label})
+            self.collection.ItemChanged(self)
 
-    @property
-    def Created(self):
+    @dbus_property(access=PropertyAccess.READ)
+    def Created(self) -> 't':
         return 0
 
-    @property
-    def Modified(self):
+    @dbus_property(access=PropertyAccess.READ)
+    def Modified(self) -> 't':
         return 0
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

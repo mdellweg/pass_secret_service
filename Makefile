@@ -10,10 +10,10 @@ export PASSWORD_STORE_DIR ::= $(projectdir)/$(relpassstore)
 all: style test
 
 test: $(relpassstore)
-	dbus-run-session -- python3 -m unittest discover
+	dbus-run-session -- pytest -v test
 
 coverage: $(relpassstore)
-	dbus-run-session -- python3 -m coverage run -m unittest discover
+	dbus-run-session -- python3 -m coverage run -m pytest -v test
 	python3 -m coverage report
 
 style:
