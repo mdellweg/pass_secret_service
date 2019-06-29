@@ -20,10 +20,10 @@ setup(  # pragma: no cover
         'pass_secret_service.interfaces',
     ],
     install_requires=[
-        'decorator',
-        'pygobject',
-        'pydbus',
         'click',
+        'cryptography',
+        'dbus_next',
+        'decorator',
         'pypass',
         'simplejson',
     ],

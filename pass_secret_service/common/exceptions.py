@@ -1,31 +1,23 @@
-# Prepare Exceptions, that get translated into the corresponding DBus errors
+from dbus_next import DBusError
 
 
-class DBusErrorNotSupported(Exception):
-    pass
+class DBusErrorNotSupported(DBusError):
+    def __init__(self):
+        super().__init__("org.freedesktop.DBus.Error.NotSupported", "This is not supported.")
 
 
-DBusErrorNotSupported.__name__ = "org.freedesktop.DBus.Error.NotSupported"
+class DBusErrorIsLocked(DBusError):
+    def __init__(self, path):
+        super().__init__("org.freedesktop.Secret.Error.IsLocked", "Object is locked: {}.".format(path))
 
 
-class DBusErrorIsLocked(Exception):
-    pass
+class DBusErrorNoSession(DBusError):
+    def __init__(self, path):
+        super().__init__("org.freedesktop.Secret.Error.NoSession", "No such session: {}.".format(path))
 
 
-DBusErrorIsLocked.__name__ = "org.freedesktop.Secret.Error.IsLocked"
-
-
-class DBusErrorNoSession(Exception):
-    pass
-
-
-DBusErrorNoSession.__name__ = "org.freedesktop.Secret.Error.NoSession"
-
-
-class DBusErrorNoSuchObject(Exception):
-    pass
-
-
-DBusErrorNoSuchObject.__name__ = "org.freedesktop.Secret.Error.NoSuchObject"
+class DBusErrorNoSuchObject(DBusError):
+    def __init__(self, path):
+        super().__init__("org.freedesktop.Secret.Error.NoSuchObject", "No such object: {}.".format(path))
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

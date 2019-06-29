@@ -1,73 +1,25 @@
 # Implementation of the org.freedesktop.Secret.Service interface
 
-import pydbus
-from pydbus.generic import signal
-from gi.repository import GLib
+from dbus_next.service import (
+    dbus_property,
+    method,
+    PropertyAccess,
+    ServiceInterface,
+    signal,
+)
+from dbus_next import Variant
 
-from pass_secret_service.common.debug import debug_me
-from pass_secret_service.common.exceptions import DBusErrorNotSupported, DBusErrorNoSuchObject, DBusErrorNoSession
-from pass_secret_service.common.names import bus_name, base_path, COLLECTION_LABEL
+from pass_secret_service.common.exceptions import (
+    DBusErrorNotSupported,
+    DBusErrorNoSuchObject,
+    DBusErrorNoSession,
+)
+from pass_secret_service.common.names import base_path, COLLECTION_LABEL
 from pass_secret_service.interfaces.collection import Collection
 from pass_secret_service.interfaces.session import Session
 
 
-class Service:
-    """
-      <node>
-        <interface name='org.freedesktop.Secret.Service'>
-          <method name='OpenSession'>
-            <arg type='s' name='algorithm' direction='in'/>
-            <arg type='v' name='input' direction='in'/>
-            <arg type='v' name='output' direction='out'/>
-            <arg type='o' name='result' direction='out'/>
-          </method>
-          <method name='CreateCollection'>
-            <arg type='a{sv}' name='properties' direction='in'/>
-            <arg type='s' name='alias' direction='in'/>
-            <arg type='o' name='collection' direction='out'/>
-            <arg type='o' name='prompt' direction='out'/>
-          </method>
-          <method name='SearchItems'>
-            <arg type='a{ss}' name='attributes' direction='in'/>
-            <arg type='ao' name='unlocked' direction='out'/>
-            <arg type='ao' name='locked' direction='out'/>
-          </method>
-          <method name='Unlock'>
-            <arg type='ao' name='objects' direction='in'/>
-            <arg type='ao' name='unlocked' direction='out'/>
-            <arg type='o' name='prompt' direction='out'/>
-          </method>
-          <method name='Lock'>
-            <arg type='ao' name='objects' direction='in'/>
-            <arg type='ao' name='locked' direction='out'/>
-            <arg type='o' name='prompt' direction='out'/>
-          </method>
-          <method name='GetSecrets'>
-            <arg type='ao' name='items' direction='in'/>
-            <arg type='o' name='session' direction='in'/>
-            <arg type='a{o(oayays)}' name='secrets' direction='out'/>
-          </method>
-          <method name='ReadAlias'>
-            <arg type='s' name='name' direction='in'/>
-            <arg type='o' name='collection' direction='out'/>
-          </method>
-          <method name='SetAlias'>
-            <arg type='s' name='name' direction='in'/>
-            <arg type='o' name='collection' direction='in'/>
-          </method>
-          <signal name='CollectionCreated'>
-            <arg type='o' name='collection' direction='out'/>
-          </signal>
-          <signal name='CollectionDeleted'>
-            <arg type='o' name='collection' direction='out'/>
-          </signal>
-          <signal name='CollectionChanged'>
-            <arg type='o' name='collection' direction='out'/>
-          </signal>
-          <property name='Collections' type='ao' access='read'/>
-        </interface>
-      </node>
-    """
+class Service(ServiceInterface):
 
     # finder
     @staticmethod
@@ -75,7 +27,7 @@ class Service:
         if object_path.startswith('/org/freedesktop/secrets/'):
             return object_path[25:]
         else:
-            raise DBusErrorNoSuchObject()
+            raise DBusErrorNoSuchObject(object_path)
 
     def _get_collection_from_path(self, collection_path):
         if collection_path == '/':
@@ -88,7 +40,7 @@ class Service:
             elif path_components[0] == 'aliases':
                 collection = self.aliases.get(path_components[1], {'collection': None})['collection']
         if collection is None:
-            raise DBusErrorNoSuchObject()
+            raise DBusErrorNoSuchObject(collection_path)
         return collection
 
     def _get_item_from_path(self, item_path):
@@ -96,22 +48,22 @@ class Service:
             return None
         path_components = self._get_relative_object_path(item_path).split('/')
         if len(path_components) != 3 or path_components[0] != 'collection':
-            raise DBusErrorNoSuchObject()
+            raise DBusErrorNoSuchObject(item_path)
         collection = self.collections.get(path_components[1])
         if collection is None:
-            raise DBusErrorNoSuchObject()
+            raise DBusErrorNoSuchObject(item_path)
         item = collection.items.get(path_components[2])
         if item is None:
-            raise DBusErrorNoSuchObject()
+            raise DBusErrorNoSuchObject(item_path)
         return item
 
     def _get_session_from_path(self, session_path):
         path_components = self._get_relative_object_path(session_path).split('/')
         if len(path_components) != 2 or path_components[0] != 'session':
-            raise DBusErrorNoSuchObject()
+            raise DBusErrorNoSuchObject(session_path)
         session = self.sessions.get(path_components[1])
         if session is None:
-            raise DBusErrorNoSession()
+            raise DBusErrorNoSession(session_path)
         return session
 
     # Alias helpers
@@ -121,13 +73,13 @@ class Service:
         if old_alias:
             if old_alias['collection'] == collection:
                 return changed
-            old_alias['pub_ref'].unregister()
+            self.bus.unexport(old_alias['path'])
             self.aliases.pop(alias)
             changed = True
         if collection:
             alias_path = base_path + '/aliases/' + alias
-            alias_ref = self.bus.register_object(alias_path, collection, None)
-            self.aliases[alias] = {'collection': collection, 'pub_ref': alias_ref}
+            self.bus.export(alias_path, collection)
+            self.aliases[alias] = {'collection': collection, 'path': alias_path}
             changed = True
         return changed
 
@@ -137,7 +89,7 @@ class Service:
             if self._set_alias(alias, collection):
                 changed = True
         if changed:
-            self.pass_store.save_aliases({key: value['collection'].name for key, value in self.aliases.items()})
+            self.pass_store.save_aliases({key: value['collection'].id for key, value in self.aliases.items()})
 
     # secret helper
     def _encode_secret(self, session_path, password):
@@ -152,61 +104,61 @@ class Service:
         for session in self.sessions.values():
             session._unregister()
         for alias in self.aliases.values():
-            alias['pub_ref'].unregister()
+            self.bus.unexport(alias['path'])
         for collection in self.collections.values():
             collection._unregister()
-        self.pub_ref.unpublish()
+        self.bus.unexport(self.path)
 
-    @debug_me
     def __init__(self, bus, pass_store):
+        super().__init__('org.freedesktop.Secret.Service')
         self.bus = bus
         self.pass_store = pass_store
         self.sessions = {}
         self.collections = {}
         self.aliases = {}
-        for collection_name in self.pass_store.get_collections():
-            Collection(self, collection_name)
-        self._set_aliases({alias: self.collections.get(collection_name) for alias, collection_name in self.pass_store.get_aliases().items()})
+        self.path = base_path
+        for collection_id in self.pass_store.get_collections():
+            Collection(self, collection_id)
+        self._set_aliases({alias: self.collections.get(collection_id) for alias, collection_id in self.pass_store.get_aliases().items()})
         # Create default collection if need be
         if 'default' not in self.aliases:
-            self.CreateCollection({COLLECTION_LABEL: 'default collection'}, 'default')
-        # Register with dbus
-        self.pub_ref = self.bus.publish(bus_name, self)
+            self.CreateCollection({COLLECTION_LABEL: Variant('s', 'default collection')}, 'default')
+        self.bus.export(self.path, self)
 
-    @debug_me
-    def OpenSession(self, algorithm, input):
+    @method()
+    def OpenSession(self, algorithm: 's', input: 'v') -> 'vo':
         if algorithm == 'plain':
-            output = GLib.Variant('s', '')
+            output = Variant('s', '')
             new_session = Session._create_plain(self)
             result = new_session.path
-            return output, result
+            return [output, result]
         if algorithm == 'dh-ietf1024-sha256-aes128-cbc-pkcs7':
-            new_session, output = Session._create_dh(self, input)
+            new_session, output = Session._create_dh(self, input.value)
             result = new_session.path
-            return output, result
+            return [output, result]
         raise DBusErrorNotSupported('algorithm "{}" is not implemented'.format(algorithm))
 
-    @debug_me
-    def CreateCollection(self, properties, alias):
-        collection = Collection._create(self, properties)
+    @method()
+    def CreateCollection(self, properties: 'a{sv}', alias: 's') -> 'oo':
+        collection = Collection._create(self, {k: v.value for k, v in properties.items()})
         if alias != '':
             self._set_aliases({alias: collection})
         prompt = '/'
-        return collection.path, prompt
+        return [collection.path, prompt]
 
-    @debug_me
-    def SearchItems(self, attributes):
+    @method()
+    def SearchItems(self, attributes: 'a{ss}') -> 'aoao':
         unlocked = []
         locked = []
         for collection in self.collections.values():
-            if collection.Locked:
-                locked.extend(collection.SearchItems(attributes))
+            if collection.locked:
+                locked.extend(collection._search_items(attributes))
             else:
-                unlocked.extend(collection.SearchItems(attributes))
-        return unlocked, locked
+                unlocked.extend(collection._search_items(attributes))
+        return [unlocked, locked]
 
-    @debug_me
-    def Unlock(self, objects):
+    @method()
+    def Unlock(self, objects: 'ao') -> 'aoo':
         unlocked = []
         for obj_path in objects:
             try:
@@ -226,10 +178,10 @@ class Service:
             except DBusErrorNoSuchObject:
                 pass
         prompt = '/'
-        return unlocked, prompt
+        return [unlocked, prompt]
 
-    @debug_me
-    def Lock(self, objects):
+    @method()
+    def Lock(self, objects: 'ao') -> 'aoo':
         locked = []
         for obj_path in objects:
             try:
@@ -241,10 +193,10 @@ class Service:
             except DBusErrorNoSuchObject:
                 pass
         prompt = '/'
-        return locked, prompt
+        return [locked, prompt]
 
-    @debug_me
-    def GetSecrets(self, items, session):
+    @method()
+    def GetSecrets(self, items: 'ao', session: 'o') -> 'a{o(oayays)}':
         secrets = {}
         session = self._get_session_from_path(session)
         for item_path in items:
@@ -253,22 +205,29 @@ class Service:
             secrets[item_path] = session._encode_secret(password)
         return secrets
 
-    @debug_me
-    def ReadAlias(self, name):
+    @method()
+    def ReadAlias(self, name: 's') -> 'o':
         alias = self.aliases.get(name)
         return alias['collection'].path if alias else '/'
 
-    @debug_me
-    def SetAlias(self, name, collection):
+    @method()
+    def SetAlias(self, name: 's', collection: 'o') -> '':
         self._set_aliases({name: self._get_collection_from_path(collection)})
 
-    CollectionCreated = signal()
-    CollectionDeleted = signal()
-    CollectionChanged = signal()
+    @signal()
+    def CollectionCreated(self, collection) -> 'o':
+        return collection.path
 
-    @property
-    @debug_me
-    def Collections(self):
+    @signal()
+    def CollectionDeleted(self, collection) -> 'o':
+        return collection.path
+
+    @signal()
+    def CollectionChanged(self, collection) -> 'o':
+        return collection.path
+
+    @dbus_property(access=PropertyAccess.READ)
+    def Collections(self) -> 'ao':
         return [collection.path for collection in self.collections.values()]
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

@@ -1,3 +1,6 @@
 .
-dbus-python
+coverage
+pycodestyle
+pytest
+pytest-asyncio
 secretstorage
