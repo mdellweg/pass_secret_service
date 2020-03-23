@@ -25,7 +25,6 @@ setup(  # pragma: no cover
         'dbus_next',
         'decorator',
         'pypass',
-        'simplejson',
     ],
     entry_points='''
         [console_scripts]

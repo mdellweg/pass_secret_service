@@ -23,10 +23,10 @@ def term_loop(loop):
 
 async def register_service(pass_store):
     bus = await MessageBus().connect()
+    service = Service(bus, pass_store)
     reply = await bus.request_name(bus_name)
     logger.info(repr(reply))
     # TODO check reply for PRIMARY_OWNER
-    service = Service(bus, pass_store)
 
 
 def _main(path, verbose):

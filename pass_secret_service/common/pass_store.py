@@ -1,7 +1,7 @@
 import os
 import shutil
 import uuid
-import simplejson as json
+import json
 from pypass import PasswordStore
 
 
