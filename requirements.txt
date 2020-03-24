@@ -1,3 +1,4 @@
+git+https://github.com/mdellweg/python-dbus-next@dbuserror_subclassing
 .
 coverage
 pycodestyle
