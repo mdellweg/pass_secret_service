@@ -41,19 +41,15 @@ class TestCollection():
         assert await collection.get_locked() is False
 
     @pytest.mark.asyncio
-    async def test_persisted_item(self):
-        bus = await MessageBus().connect()
-        try:
-            async with ServiceEnv():
-                service = await get_service(bus)
-                default_collection = await get_collection(bus, '/org/freedesktop/secrets/aliases/default')
-                dummy, session_path = await service.call_open_session('plain', Variant('s', ''))
-                await default_collection.call_create_item({}, [session_path, b'', b'password', 'text/plain'], True)
-            async with ServiceEnv(clean=False):
-                service = await get_service(bus)
-                default_collection = await get_collection(bus, '/org/freedesktop/secrets/aliases/default')
-                assert len(await default_collection.get_items()) == 1
-        finally:
-            bus.disconnect()
+    async def test_persisted_item(self, bus):
+        async with ServiceEnv():
+            service = await get_service(bus)
+            default_collection = await get_collection(bus, '/org/freedesktop/secrets/aliases/default')
+            dummy, session_path = await service.call_open_session('plain', Variant('s', ''))
+            await default_collection.call_create_item({}, [session_path, b'', b'password', 'text/plain'], True)
+        async with ServiceEnv(clean=False):
+            service = await get_service(bus)
+            default_collection = await get_collection(bus, '/org/freedesktop/secrets/aliases/default')
+            assert len(await default_collection.get_items()) == 1
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

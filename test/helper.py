@@ -4,7 +4,6 @@ import shutil
 import sys
 
 from dbus_next.aio import MessageBus
-from decorator import decorator
 
 from pass_secret_service.common.names import base_path, bus_name
 from pass_secret_service.common.pass_store import PassStore
@@ -43,8 +42,8 @@ class ServiceEnv:
 
     async def __aenter__(self):
         self.bus = await MessageBus().connect()
-        await self.bus.request_name(bus_name)
         self.service = Service(self.bus, PassStore(path=self.path))
+        await self.bus.request_name(bus_name)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
