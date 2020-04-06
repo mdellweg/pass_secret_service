@@ -9,15 +9,21 @@ import time
 from .helper import ServiceEnv
 
 
-async def run_service(cond):
+async def run_service(started_cond, shutdown_cond):
     async with ServiceEnv():
-        async with cond:
-            await cond.wait()
+        with started_cond:
+            started_cond.notify_all()
+        async with shutdown_cond:
+            await shutdown_cond.wait()
 
 
-async def shutdown_service(cond):
-    async with cond:
-        cond.notify_all()
+async def shutdown_service(shutdown_cond):
+    async with shutdown_cond:
+        shutdown_cond.notify_all()
+
+
+async def create_cond():
+    return asyncio.Condition()
 
 
 def loop_thread(loop):
@@ -31,15 +37,17 @@ def loop_thread(loop):
 @pytest.fixture(autouse=True)
 def secret_service():
     loop = asyncio.new_event_loop()
-    cond = asyncio.Condition(loop=loop)
+    started_cond = threading.Condition()
     thread = threading.Thread(target=loop_thread, args=(loop, ), daemon=True)
     thread.start()
-    service_task = asyncio.run_coroutine_threadsafe(run_service(cond), loop)
-    time.sleep(1)
+    shutdown_cond = asyncio.run_coroutine_threadsafe(create_cond(), loop).result()
+    service_task = asyncio.run_coroutine_threadsafe(run_service(started_cond, shutdown_cond), loop)
+    with started_cond:
+        started_cond.wait()
     try:
         yield True
     finally:
-        asyncio.run_coroutine_threadsafe(shutdown_service(cond), loop).result()
+        asyncio.run_coroutine_threadsafe(shutdown_service(shutdown_cond), loop).result()
         service_task.result()
         loop.stop()
         for task in asyncio.tasks.all_tasks(loop=loop):
