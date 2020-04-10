@@ -1,9 +1,9 @@
+.git
 local
 __pycache__
 .*.swp
 .coverage
 *.egg-info
-*_cache/
 build/
 dist/
 test/.gnupghome/

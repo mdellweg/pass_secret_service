@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM debian:wheezy
 
 # Set the locale
 ENV LANG C.UTF-8
