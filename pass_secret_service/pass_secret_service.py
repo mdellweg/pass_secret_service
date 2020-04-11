@@ -27,6 +27,7 @@ async def register_service(pass_store):
     reply = await bus.request_name(bus_name)
     logger.info(repr(reply))
     # TODO check reply for PRIMARY_OWNER
+    return service
 
 
 def _main(path, verbose):
@@ -38,10 +39,13 @@ def _main(path, verbose):
     mainloop.add_signal_handler(signal.SIGINT, functools.partial(term_loop, mainloop))
     try:
         logger.info("Register Service")
-        mainloop.run_until_complete(register_service(pass_store))
+        service = mainloop.run_until_complete(register_service(pass_store))
         logger.info("Running main loop")
         mainloop.run_forever()
     finally:
+        mainloop.stop()
+        mainloop.run_until_complete(service._unregister())
+        mainloop.run_until_complete(mainloop.shutdown_asyncgens())
         mainloop.close()
 
 

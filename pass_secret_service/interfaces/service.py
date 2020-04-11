@@ -100,13 +100,13 @@ class Service(ServiceInterface):
         session = self._get_session_from_path(secret[0])
         return await session._decode_secret(secret)
 
-    def _unregister(self):
+    async def _unregister(self):
         for session in self.sessions.values():
-            session._unregister()
+            await session._unregister()
         for alias in self.aliases.values():
             self.bus.unexport(alias['path'])
         for collection in self.collections.values():
-            collection._unregister()
+            await collection._unregister()
         self.bus.unexport(self.path)
 
     def __init__(self, bus, pass_store):

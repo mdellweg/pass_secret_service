@@ -47,5 +47,5 @@ class ServiceEnv:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.service._unregister()
+        await self.service._unregister()
         self.bus.disconnect()

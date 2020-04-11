@@ -59,7 +59,7 @@ class Session(ServiceInterface, SerialMixin):
             password = unpadder.update(password) + unpadder.finalize()
         return bytearray(password).decode('utf8')
 
-    def _unregister(self):
+    async def _unregister(self):
         self.bus.unexport(self.path)
 
     def __init__(self, service, aes_key=None):
@@ -75,10 +75,10 @@ class Session(ServiceInterface, SerialMixin):
         self.service.sessions[self.id] = self
 
     @method()
-    def Close(self) -> '':
+    async def Close(self) -> '':
         # Deregister from service
         self.service.sessions.pop(self.id)
         # Deregister from dbus
-        self._unregister()
+        await self._unregister()
 
 #  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

@@ -9,10 +9,10 @@ export PASSWORD_STORE_DIR ::= $(projectdir)/$(relpassstore)
 
 all: style test
 
-test: $(relpassstore)
+test: | $(relpassstore)
 	dbus-run-session -- pytest -v test
 
-coverage: $(relpassstore)
+coverage: | $(relpassstore)
 	dbus-run-session -- python3 -m coverage run -m pytest -v test
 	python3 -m coverage report
 
@@ -25,7 +25,7 @@ $(relgnupghome): test/test_key.asc test/test_ownertrust.txt
 	gpg --allow-secret-key-import --import test/test_key.asc
 	gpg --import-ownertrust test/test_ownertrust.txt
 
-$(relpassstore): $(relgnupghome)
+$(relpassstore): | $(relgnupghome)
 	@echo "===== Preparing password store in $(relpassstore) ====="
 	pypass init -p $(relpassstore) $(gpg_key_id)
 

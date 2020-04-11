@@ -35,9 +35,9 @@ class Collection(ServiceInterface):
                 results.append(item.path)
         return results
 
-    def _unregister(self):
+    async def _unregister(self):
         for item in self.items.values():
-            item._unregister()
+            await item._unregister()
         self.bus.unexport(self.path)
 
     def __init__(self, service, id):
@@ -58,17 +58,17 @@ class Collection(ServiceInterface):
         self.service.collections[self.id] = self
 
     @method()
-    def Delete(self) -> 'o':
+    async def Delete(self) -> 'o':
         # Delete items
         for item in list(self.items.values()):
-            item.Delete()
+            await item._delete()
         # Remove stale aliases
         deleted_aliases = [name for name, alias in self.service.aliases.items() if alias['collection'] == self]
         self.service._set_aliases({name: None for name in deleted_aliases})
         # Deregister from servise
         self.service.collections.pop(self.id)
         # Deregister from dbus
-        self._unregister()
+        await self._unregister()
         # Remove from disk
         self.pass_store.delete_collection(self.id)
         # Signal deletion

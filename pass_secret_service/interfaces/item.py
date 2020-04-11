@@ -22,6 +22,16 @@ class Item(ServiceInterface):
         collection.ItemCreated(instance)
         return instance
 
+    async def _delete(self):
+        # Deregister from collection
+        self.collection.items.pop(self.id)
+        # Deregister from dbus
+        await self._unregister()
+        # Remove from disk
+        self.service.pass_store.delete_item(self.collection.id, self.id)
+        # Signal deletion
+        self.collection.ItemDeleted(self)
+
     def _has_attributes(self, attributes):
         attrs = self.Attributes
         for key, value in attributes.items():
@@ -37,7 +47,7 @@ class Item(ServiceInterface):
         self.pass_store.set_item_password(self.collection.id, self.id, password)
         self.collection.ItemChanged(self)
 
-    def _unregister(self):
+    async def _unregister(self):
         self.bus.unexport(self.path)
 
     def __init__(self, collection, id):
@@ -55,15 +65,8 @@ class Item(ServiceInterface):
         self.collection.items[self.id] = self
 
     @method()
-    def Delete(self) -> 'o':
-        # Deregister from collection
-        self.collection.items.pop(self.id)
-        # Deregister from dbus
-        self._unregister()
-        # Remove from disk
-        self.service.pass_store.delete_item(self.collection.id, self.id)
-        # Signal deletion
-        self.collection.ItemDeleted(self)
+    async def Delete(self) -> 'o':
+        await self._delete()
         prompt = '/'
         return prompt
 
