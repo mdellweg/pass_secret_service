@@ -32,8 +32,8 @@ class Item(ServiceInterface):
     def _get_password(self):
         return self.pass_store.get_item_password(self.collection.id, self.id)
 
-    def _set_secret(self, secret):
-        password = self.service._decode_secret(secret)
+    async def _set_secret(self, secret):
+        password = await self.service._decode_secret(secret)
         self.pass_store.set_item_password(self.collection.id, self.id, password)
         self.collection.ItemChanged(self)
 
@@ -68,12 +68,12 @@ class Item(ServiceInterface):
         return prompt
 
     @method()
-    def GetSecret(self, session: 'o') -> '(oayays)':
-        return self.service._encode_secret(session, self._get_password())
+    async def GetSecret(self, session: 'o') -> '(oayays)':
+        return await self.service._encode_secret(session, self._get_password())
 
     @method()
-    def SetSecret(self, secret: '(oayays)'):
-        self._set_secret(secret)
+    async def SetSecret(self, secret: '(oayays)'):
+        await self._set_secret(secret)
 
     @dbus_property(access=PropertyAccess.READ)
     def Locked(self) -> 'b':

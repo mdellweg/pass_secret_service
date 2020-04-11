@@ -92,13 +92,13 @@ class Service(ServiceInterface):
             self.pass_store.save_aliases({key: value['collection'].id for key, value in self.aliases.items()})
 
     # secret helper
-    def _encode_secret(self, session_path, password):
+    async def _encode_secret(self, session_path, password):
         session = self._get_session_from_path(session_path)
-        return session._encode_secret(password)
+        return await session._encode_secret(password)
 
-    def _decode_secret(self, secret):
+    async def _decode_secret(self, secret):
         session = self._get_session_from_path(secret[0])
-        return session._decode_secret(secret)
+        return await session._decode_secret(secret)
 
     def _unregister(self):
         for session in self.sessions.values():
@@ -126,17 +126,17 @@ class Service(ServiceInterface):
         self.bus.export(self.path, self)
 
     @method()
-    def OpenSession(self, algorithm: 's', input: 'v') -> 'vo':
+    async def OpenSession(self, algorithm: 's', input: 'v') -> 'vo':
         if algorithm == 'plain':
             output = Variant('s', '')
-            new_session = Session._create_plain(self)
-            result = new_session.path
-            return [output, result]
-        if algorithm == 'dh-ietf1024-sha256-aes128-cbc-pkcs7':
-            new_session, output = Session._create_dh(self, input.value)
-            result = new_session.path
-            return [output, result]
-        raise DBusErrorNotSupported('algorithm "{}" is not implemented'.format(algorithm))
+            new_session = Session(self)
+        elif algorithm == 'dh-ietf1024-sha256-aes128-cbc-pkcs7':
+            aes_key, output = await Session._create_dh(input.value)
+            new_session = Session(self, aes_key=aes_key)
+        else:
+            raise DBusErrorNotSupported('algorithm "{}" is not implemented'.format(algorithm))
+        result = new_session.path
+        return [output, result]
 
     @method()
     def CreateCollection(self, properties: 'a{sv}', alias: 's') -> 'oo':
@@ -196,13 +196,13 @@ class Service(ServiceInterface):
         return [locked, prompt]
 
     @method()
-    def GetSecrets(self, items: 'ao', session: 'o') -> 'a{o(oayays)}':
+    async def GetSecrets(self, items: 'ao', session: 'o') -> 'a{o(oayays)}':
         secrets = {}
         session = self._get_session_from_path(session)
         for item_path in items:
             item = self._get_item_from_path(item_path)
             password = item._get_password()
-            secrets[item_path] = session._encode_secret(password)
+            secrets[item_path] = await session._encode_secret(password)
         return secrets
 
     @method()

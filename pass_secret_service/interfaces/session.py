@@ -19,26 +19,24 @@ from dbus_next.service import (
 from dbus_next import Variant
 
 from pass_secret_service.common.names import base_path
-from pass_secret_service.common.tools import SerialMixin
+from pass_secret_service.common.tools import run_in_executor, SerialMixin
 from pass_secret_service.common.consts import dh_prime
 
 
 class Session(ServiceInterface, SerialMixin):
     @classmethod
-    def _create_plain(cls, service):
-        return cls(service)
-
-    @classmethod
-    def _create_dh(cls, service, input):
+    @run_in_executor
+    def _create_dh(cls, input):
         priv_key = int_from_bytes(os.urandom(0x80), 'big')
         pub_key = pow(2, priv_key, dh_prime)
         shared_secret = pow(int_from_bytes(input, 'big'), priv_key, dh_prime)
         salt = b'\x00' * 0x20
         shared_key = hmac.new(salt, shared_secret.to_bytes(0x80, 'big'), sha256).digest()
         aes_key = hmac.new(shared_key, b'\x01', sha256).digest()[:0x10]
-        return cls(service, aes_key=aes_key), Variant('ay', pub_key.to_bytes(0x80, 'big'))
+        return aes_key, Variant('ay', pub_key.to_bytes(0x80, 'big'))
 
     # secrethelper
+    @run_in_executor
     def _encode_secret(self, password):
         aes_iv = b''
         password = password.encode('utf8')
@@ -50,6 +48,7 @@ class Session(ServiceInterface, SerialMixin):
             password = encryptor.update(password) + encryptor.finalize()
         return [self.path, aes_iv, password, 'text/plain']
 
+    @run_in_executor
     def _decode_secret(self, secret):
         password = secret[2]
         if self.aes_key:

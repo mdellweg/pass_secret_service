@@ -81,7 +81,7 @@ class Collection(ServiceInterface):
         return self._search_items(attributes)
 
     @method()
-    def CreateItem(self, properties: 'a{sv}', secret: '(oayays)', replace: 'b') -> 'oo':
+    async def CreateItem(self, properties: 'a{sv}', secret: '(oayays)', replace: 'b') -> 'oo':
         prompt = '/'
         if replace:
             attributes = properties.get(ITEM_ATTRIBUTES, Variant('a{ss}', {})).value
@@ -89,9 +89,9 @@ class Collection(ServiceInterface):
             if len(repl_items):
                 item = self.service._get_item_from_path(repl_items[0])
                 item.Label = properties.get(ITEM_LABEL, Variant('s', '')).value
-                item._set_secret(secret)
+                await item._set_secret(secret)
                 return [item.path, prompt]
-        password = self.service._decode_secret(secret)
+        password = await self.service._decode_secret(secret)
         item = Item._create(self, password, properties)
         return [item.path, prompt]
 
