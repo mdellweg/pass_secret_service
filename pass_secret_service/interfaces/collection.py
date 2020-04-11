@@ -11,16 +11,26 @@ from dbus_next.service import (
 )
 
 from pass_secret_service.common.names import base_path, COLLECTION_LABEL, ITEM_LABEL, ITEM_ATTRIBUTES
+from pass_secret_service.common.tools import run_in_executor
 from pass_secret_service.interfaces.item import Item
 
 
 class Collection(ServiceInterface):
+    @staticmethod
+    @run_in_executor
+    def _create_in_store(service, properties):
+        return service.pass_store.create_collection(properties)
+
     @classmethod
-    def _create(cls, service, properties):
-        id = service.pass_store.create_collection(properties)
-        instance = cls(service, id)
+    async def _create(cls, service, properties):
+        id = await cls._create_in_store(service, properties)
+        instance = await cls._init(service, id)
         service.CollectionCreated(instance)
         return instance
+
+    @run_in_executor
+    def _delete_from_store(self):
+        self.pass_store.delete_collection(self.id)
 
     def _lock(self):
         self.locked = True
@@ -46,16 +56,29 @@ class Collection(ServiceInterface):
         self.bus = self.service.bus
         self.pass_store = self.service.pass_store
         self.id = id
-        self.properties = self.pass_store.get_collection_properties(self.id)
         self.path = base_path + '/collection/' + self.id
         self.locked = False
         self.items = {}
-        for item_id in self.pass_store.get_items(self.id):
-            Item(self, item_id)
+
+    @run_in_executor
+    def _get_collection_properties(self):
+        return self.pass_store.get_collection_properties(self.id)
+
+    @run_in_executor
+    def _get_items(self):
+        return self.pass_store.get_items(self.id)
+
+    @classmethod
+    async def _init(cls, service, id):
+        self = cls(service, id)
+        self.properties = await self._get_collection_properties()
+        for item_id in await self._get_items():
+            await Item._init(self, item_id)
         # Register with dbus
         self.pub_ref = self.bus.export(self.path, self)
         # Register with service
         self.service.collections[self.id] = self
+        return self
 
     @method()
     async def Delete(self) -> 'o':
@@ -64,20 +87,20 @@ class Collection(ServiceInterface):
             await item._delete()
         # Remove stale aliases
         deleted_aliases = [name for name, alias in self.service.aliases.items() if alias['collection'] == self]
-        self.service._set_aliases({name: None for name in deleted_aliases})
+        await self.service._set_aliases({name: None for name in deleted_aliases})
         # Deregister from servise
         self.service.collections.pop(self.id)
         # Deregister from dbus
         await self._unregister()
         # Remove from disk
-        self.pass_store.delete_collection(self.id)
+        await self._delete_from_store()
         # Signal deletion
         self.service.CollectionDeleted(self)
         prompt = "/"
         return prompt
 
     @method()
-    def SearchItems(self, attributes: 'a{ss}') -> 'ao':
+    async def SearchItems(self, attributes: 'a{ss}') -> 'ao':
         return self._search_items(attributes)
 
     @method()
@@ -92,7 +115,7 @@ class Collection(ServiceInterface):
                 await item._set_secret(secret)
                 return [item.path, prompt]
         password = await self.service._decode_secret(secret)
-        item = Item._create(self, password, properties)
+        item = await Item._create(self, password, properties)
         return [item.path, prompt]
 
     @signal()

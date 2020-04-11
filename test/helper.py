@@ -42,7 +42,7 @@ class ServiceEnv:
 
     async def __aenter__(self):
         self.bus = await MessageBus().connect()
-        self.service = Service(self.bus, PassStore(path=self.path))
+        self.service = await Service._init(self.bus, PassStore(path=self.path))
         await self.bus.request_name(bus_name)
         return self
 

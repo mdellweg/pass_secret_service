@@ -8,19 +8,29 @@ from dbus_next.service import (
 )
 
 from pass_secret_service.common.names import base_path, ITEM_LABEL, ITEM_ATTRIBUTES
+from pass_secret_service.common.tools import run_in_executor
 
 
 class Item(ServiceInterface):
     @classmethod
-    def _create(cls, collection, password, properties=None):
+    @run_in_executor
+    def _create_in_store(cls, collection, password, properties):
+        return collection.service.pass_store.create_item(collection.id, password, properties)
+
+    @classmethod
+    async def _create(cls, collection, password, properties=None):
         if properties is None:
             properties = {}
         else:
             properties = {k: v.value for k, v in properties.items()}
-        id = collection.service.pass_store.create_item(collection.id, password, properties)
-        instance = cls(collection, id)
+        id = await cls._create_in_store(collection, password, properties)
+        instance = await cls._init(collection, id)
         collection.ItemCreated(instance)
         return instance
+
+    @run_in_executor
+    def _delete_from_store(self):
+        self.service.pass_store.delete_item(self.collection.id, self.id)
 
     async def _delete(self):
         # Deregister from collection
@@ -28,7 +38,7 @@ class Item(ServiceInterface):
         # Deregister from dbus
         await self._unregister()
         # Remove from disk
-        self.service.pass_store.delete_item(self.collection.id, self.id)
+        await self._delete_from_store()
         # Signal deletion
         self.collection.ItemDeleted(self)
 
@@ -39,12 +49,21 @@ class Item(ServiceInterface):
                 return False
         return True
 
+    @run_in_executor
     def _get_password(self):
         return self.pass_store.get_item_password(self.collection.id, self.id)
 
+    async def _get_secret(self, session):
+        password = await self._get_password()
+        return await self.service._encode_secret(session, password)
+
+    @run_in_executor
+    def _set_password(self, password):
+        return self.pass_store.set_item_password(self.collection.id, self.id, password)
+
     async def _set_secret(self, secret):
         password = await self.service._decode_secret(secret)
-        self.pass_store.set_item_password(self.collection.id, self.id, password)
+        await self._set_password(password)
         self.collection.ItemChanged(self)
 
     async def _unregister(self):
@@ -57,12 +76,21 @@ class Item(ServiceInterface):
         self.bus = self.service.bus
         self.pass_store = self.service.pass_store
         self.id = id
-        self.properties = self.pass_store.get_item_properties(self.collection.id, self.id)
         self.path = self.collection.path + '/' + self.id
+
+    @run_in_executor
+    def _get_item_properties(self):
+        return self.pass_store.get_item_properties(self.collection.id, self.id)
+
+    @classmethod
+    async def _init(cls, collection, id):
+        self = cls(collection, id)
+        self.properties = await self._get_item_properties()
         # Register with dbus
         self.bus.export(self.path, self)
         # Register with collection
         self.collection.items[self.id] = self
+        return self
 
     @method()
     async def Delete(self) -> 'o':
@@ -72,7 +100,7 @@ class Item(ServiceInterface):
 
     @method()
     async def GetSecret(self, session: 'o') -> '(oayays)':
-        return await self.service._encode_secret(session, self._get_password())
+        return await self._get_secret(session)
 
     @method()
     async def SetSecret(self, secret: '(oayays)'):
@@ -91,6 +119,7 @@ class Item(ServiceInterface):
         if self.Attributes != attributes:
             self.properties = self.pass_store.update_item_properties(self.collection.id, self.id, {ITEM_ATTRIBUTES: attributes})
             self.collection.ItemChanged(self)
+            self.emit_properties_changed({'Attributes': attributes})
 
     @dbus_property(access=PropertyAccess.READWRITE)
     def Label(self) -> 's':
@@ -101,6 +130,7 @@ class Item(ServiceInterface):
         if self.Label != label:
             self.properties = self.pass_store.update_item_properties(self.collection.id, self.id, {ITEM_LABEL: label})
             self.collection.ItemChanged(self)
+            self.emit_properties_changed({'Label': label})
 
     @dbus_property(access=PropertyAccess.READ)
     def Created(self) -> 't':

@@ -15,6 +15,7 @@ from pass_secret_service.common.exceptions import (
     DBusErrorNoSession,
 )
 from pass_secret_service.common.names import base_path, COLLECTION_LABEL
+from pass_secret_service.common.tools import run_in_executor
 from pass_secret_service.interfaces.collection import Collection
 from pass_secret_service.interfaces.session import Session
 
@@ -83,13 +84,17 @@ class Service(ServiceInterface):
             changed = True
         return changed
 
-    def _set_aliases(self, alias_dict):
+    @run_in_executor
+    def _save_aliases(self):
+        self.pass_store.save_aliases({key: value['collection'].id for key, value in self.aliases.items()})
+
+    async def _set_aliases(self, alias_dict):
         changed = False
         for alias, collection in alias_dict.items():
             if self._set_alias(alias, collection):
                 changed = True
         if changed:
-            self.pass_store.save_aliases({key: value['collection'].id for key, value in self.aliases.items()})
+            await self._save_aliases()
 
     # secret helper
     async def _encode_secret(self, session_path, password):
@@ -117,37 +122,56 @@ class Service(ServiceInterface):
         self.collections = {}
         self.aliases = {}
         self.path = base_path
-        for collection_id in self.pass_store.get_collections():
-            Collection(self, collection_id)
-        self._set_aliases({alias: self.collections.get(collection_id) for alias, collection_id in self.pass_store.get_aliases().items()})
+
+    @run_in_executor
+    def _get_collections(self):
+        return self.pass_store.get_collections()
+
+    @run_in_executor
+    def _get_aliases(self):
+        return self.pass_store.get_aliases()
+
+    @classmethod
+    async def _init(cls, bus, pass_store):
+        self = cls(bus, pass_store)
+        for collection_id in await self._get_collections():
+            await Collection._init(self, collection_id)
+        aliases = await self._get_aliases()
+        await self._set_aliases({alias: self.collections.get(collection_id) for alias, collection_id in aliases.items()})
         # Create default collection if need be
         if 'default' not in self.aliases:
-            self.CreateCollection({COLLECTION_LABEL: Variant('s', 'default collection')}, 'default')
+            await self._create_collection({COLLECTION_LABEL: Variant('s', 'default collection')}, 'default')
+        # Register with dbus
         self.bus.export(self.path, self)
+        return self
 
     @method()
     async def OpenSession(self, algorithm: 's', input: 'v') -> 'vo':
         if algorithm == 'plain':
+            aes_key = None
             output = Variant('s', '')
-            new_session = Session(self)
         elif algorithm == 'dh-ietf1024-sha256-aes128-cbc-pkcs7':
             aes_key, output = await Session._create_dh(input.value)
-            new_session = Session(self, aes_key=aes_key)
         else:
             raise DBusErrorNotSupported('algorithm "{}" is not implemented'.format(algorithm))
+        new_session = Session(self, aes_key=aes_key)
         result = new_session.path
         return [output, result]
 
-    @method()
-    def CreateCollection(self, properties: 'a{sv}', alias: 's') -> 'oo':
-        collection = Collection._create(self, {k: v.value for k, v in properties.items()})
+    async def _create_collection(self, properties, alias):
+        collection = await Collection._create(self, {k: v.value for k, v in properties.items()})
         if alias != '':
-            self._set_aliases({alias: collection})
+            await self._set_aliases({alias: collection})
+        return collection
+
+    @method()
+    async def CreateCollection(self, properties: 'a{sv}', alias: 's') -> 'oo':
+        collection = await self._create_collection(properties, alias)
         prompt = '/'
         return [collection.path, prompt]
 
     @method()
-    def SearchItems(self, attributes: 'a{ss}') -> 'aoao':
+    async def SearchItems(self, attributes: 'a{ss}') -> 'aoao':
         unlocked = []
         locked = []
         for collection in self.collections.values():
@@ -158,7 +182,7 @@ class Service(ServiceInterface):
         return [unlocked, locked]
 
     @method()
-    def Unlock(self, objects: 'ao') -> 'aoo':
+    async def Unlock(self, objects: 'ao') -> 'aoo':
         unlocked = []
         for obj_path in objects:
             try:
@@ -181,7 +205,7 @@ class Service(ServiceInterface):
         return [unlocked, prompt]
 
     @method()
-    def Lock(self, objects: 'ao') -> 'aoo':
+    async def Lock(self, objects: 'ao') -> 'aoo':
         locked = []
         for obj_path in objects:
             try:
@@ -201,18 +225,18 @@ class Service(ServiceInterface):
         session = self._get_session_from_path(session)
         for item_path in items:
             item = self._get_item_from_path(item_path)
-            password = item._get_password()
+            password = await item._get_password()
             secrets[item_path] = await session._encode_secret(password)
         return secrets
 
     @method()
-    def ReadAlias(self, name: 's') -> 'o':
+    async def ReadAlias(self, name: 's') -> 'o':
         alias = self.aliases.get(name)
         return alias['collection'].path if alias else '/'
 
     @method()
-    def SetAlias(self, name: 's', collection: 'o') -> '':
-        self._set_aliases({name: self._get_collection_from_path(collection)})
+    async def SetAlias(self, name: 's', collection: 'o') -> '':
+        await self._set_aliases({name: self._get_collection_from_path(collection)})
 
     @signal()
     def CollectionCreated(self, collection) -> 'o':
