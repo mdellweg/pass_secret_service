@@ -58,5 +58,3 @@ def main(path, verbose):
 
 if __name__ == '__main__':  # pragma: no cover
     main()
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

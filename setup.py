@@ -1,4 +1,4 @@
-from setuptools import setup  # pragma: no cover
+from setuptools import setup
 
 
 def read_file(file_name):
@@ -6,7 +6,7 @@ def read_file(file_name):
         return f.read()
 
 
-setup(  # pragma: no cover
+setup(
     name='pass_secret_service',
     version='0.1a0',
     description=read_file('README.md'),
@@ -31,5 +31,3 @@ setup(  # pragma: no cover
         pass_secret_service=pass_secret_service:main
     ''',
 )
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :
