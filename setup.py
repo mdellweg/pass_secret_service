@@ -1,4 +1,4 @@
-from setuptools import setup  # pragma: no cover
+from setuptools import setup
 
 
 def read_file(file_name):
@@ -6,7 +6,7 @@ def read_file(file_name):
         return f.read()
 
 
-setup(  # pragma: no cover
+setup(
     name='pass_secret_service',
     version='0.1a0',
     description=read_file('README.md'),
