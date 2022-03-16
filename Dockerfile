@@ -1,4 +1,4 @@
-FROM debian:wheezy
+FROM debian:bullseye-slim
 
 # Set the locale
 ENV LANG C.UTF-8
