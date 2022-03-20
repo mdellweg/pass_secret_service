@@ -139,5 +139,3 @@ class Item(ServiceInterface):
     @dbus_property(access=PropertyAccess.READ)
     def Modified(self) -> 't':
         return 0
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

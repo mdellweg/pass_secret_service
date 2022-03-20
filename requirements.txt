@@ -1,4 +1,3 @@
-git+https://github.com/mdellweg/python-dbus-next@master
 .
 coverage
 pycodestyle
