@@ -15,5 +15,3 @@ Once these files are in place, you will need to run `systemctl daemon-reload`. N
 * [pass](https://www.passwordstore.org/)
 * [pypass](https://github.com/aviau/python-pass)
 * [SecretStorage](https://pypi.python.org/pypi/SecretStorage)
-
->  vim: set ts=2 sw=2 ft=markdown et noro norl cin si ai :

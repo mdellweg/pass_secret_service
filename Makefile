@@ -18,6 +18,7 @@ coverage: | $(relpassstore)
 
 style:
 	pycodestyle --max-line-length=159 .
+	black --diff .
 
 $(relgnupghome): test/test_key.asc test/test_ownertrust.txt
 	@echo "===== Preparing gpg test keys in $(relgnupghome) ====="
@@ -42,5 +43,3 @@ clean-build:
 	$(RM) -r build/
 	$(RM) -r dist/
 	$(RM) -r *.egg-info
-
-#  vim: set ts=8 sw=2 ft=make noet noro norl cin nosi ai :

@@ -33,7 +33,7 @@ async def register_service(pass_store):
 def _main(path, verbose):
     if verbose:
         logging.basicConfig(level=20)
-    pass_store = PassStore(**({'path': path} if path else {}))
+    pass_store = PassStore(**({"path": path} if path else {}))
     mainloop = asyncio.get_event_loop()
     mainloop.add_signal_handler(signal.SIGTERM, functools.partial(term_loop, mainloop))
     mainloop.add_signal_handler(signal.SIGINT, functools.partial(term_loop, mainloop))
@@ -50,13 +50,11 @@ def _main(path, verbose):
 
 
 @click.command()
-@click.option('--path', help='path to the password store (optional)')
-@click.option('-v', '--verbose', help='be verbose', is_flag=True, default=False)
+@click.option("--path", help="path to the password store (optional)")
+@click.option("-v", "--verbose", help="be verbose", is_flag=True, default=False)
 def main(path, verbose):
     _main(path, verbose)
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

@@ -25,30 +25,30 @@ class Service(ServiceInterface):
     # finder
     @staticmethod
     def _get_relative_object_path(object_path):
-        if object_path.startswith('/org/freedesktop/secrets/'):
+        if object_path.startswith("/org/freedesktop/secrets/"):
             return object_path[25:]
         else:
             raise DBusErrorNoSuchObject(object_path)
 
     def _get_collection_from_path(self, collection_path):
-        if collection_path == '/':
+        if collection_path == "/":
             return None
         collection = None
-        path_components = self._get_relative_object_path(collection_path).split('/')
+        path_components = self._get_relative_object_path(collection_path).split("/")
         if len(path_components) == 2:
-            if path_components[0] == 'collection':
+            if path_components[0] == "collection":
                 collection = self.collections.get(path_components[1])
-            elif path_components[0] == 'aliases':
-                collection = self.aliases.get(path_components[1], {'collection': None})['collection']
+            elif path_components[0] == "aliases":
+                collection = self.aliases.get(path_components[1], {"collection": None})["collection"]
         if collection is None:
             raise DBusErrorNoSuchObject(collection_path)
         return collection
 
     def _get_item_from_path(self, item_path):
-        if item_path == '/':
+        if item_path == "/":
             return None
-        path_components = self._get_relative_object_path(item_path).split('/')
-        if len(path_components) != 3 or path_components[0] != 'collection':
+        path_components = self._get_relative_object_path(item_path).split("/")
+        if len(path_components) != 3 or path_components[0] != "collection":
             raise DBusErrorNoSuchObject(item_path)
         collection = self.collections.get(path_components[1])
         if collection is None:
@@ -59,8 +59,8 @@ class Service(ServiceInterface):
         return item
 
     def _get_session_from_path(self, session_path):
-        path_components = self._get_relative_object_path(session_path).split('/')
-        if len(path_components) != 2 or path_components[0] != 'session':
+        path_components = self._get_relative_object_path(session_path).split("/")
+        if len(path_components) != 2 or path_components[0] != "session":
             raise DBusErrorNoSuchObject(session_path)
         session = self.sessions.get(path_components[1])
         if session is None:
@@ -72,21 +72,21 @@ class Service(ServiceInterface):
         changed = False
         old_alias = self.aliases.get(alias)
         if old_alias:
-            if old_alias['collection'] == collection:
+            if old_alias["collection"] == collection:
                 return changed
-            self.bus.unexport(old_alias['path'])
+            self.bus.unexport(old_alias["path"])
             self.aliases.pop(alias)
             changed = True
         if collection:
-            alias_path = base_path + '/aliases/' + alias
+            alias_path = base_path + "/aliases/" + alias
             self.bus.export(alias_path, collection)
-            self.aliases[alias] = {'collection': collection, 'path': alias_path}
+            self.aliases[alias] = {"collection": collection, "path": alias_path}
             changed = True
         return changed
 
     @run_in_executor
     def _save_aliases(self):
-        self.pass_store.save_aliases({key: value['collection'].id for key, value in self.aliases.items()})
+        self.pass_store.save_aliases({key: value["collection"].id for key, value in self.aliases.items()})
 
     async def _set_aliases(self, alias_dict):
         changed = False
@@ -109,13 +109,13 @@ class Service(ServiceInterface):
         for session in self.sessions.values():
             await session._unregister()
         for alias in self.aliases.values():
-            self.bus.unexport(alias['path'])
+            self.bus.unexport(alias["path"])
         for collection in self.collections.values():
             await collection._unregister()
         self.bus.unexport(self.path)
 
     def __init__(self, bus, pass_store):
-        super().__init__('org.freedesktop.Secret.Service')
+        super().__init__("org.freedesktop.Secret.Service")
         self.bus = bus
         self.pass_store = pass_store
         self.sessions = {}
@@ -139,18 +139,18 @@ class Service(ServiceInterface):
         aliases = await self._get_aliases()
         await self._set_aliases({alias: self.collections.get(collection_id) for alias, collection_id in aliases.items()})
         # Create default collection if need be
-        if 'default' not in self.aliases:
-            await self._create_collection({COLLECTION_LABEL: Variant('s', 'default collection')}, 'default')
+        if "default" not in self.aliases:
+            await self._create_collection({COLLECTION_LABEL: Variant("s", "default collection")}, "default")
         # Register with dbus
         self.bus.export(self.path, self)
         return self
 
     @method()
-    async def OpenSession(self, algorithm: 's', input: 'v') -> 'vo':
-        if algorithm == 'plain':
+    async def OpenSession(self, algorithm: "s", input: "v") -> "vo":
+        if algorithm == "plain":
             aes_key = None
-            output = Variant('s', '')
-        elif algorithm == 'dh-ietf1024-sha256-aes128-cbc-pkcs7':
+            output = Variant("s", "")
+        elif algorithm == "dh-ietf1024-sha256-aes128-cbc-pkcs7":
             aes_key, output = await Session._create_dh(input.value)
         else:
             raise DBusErrorNotSupported('algorithm "{}" is not implemented'.format(algorithm))
@@ -160,18 +160,18 @@ class Service(ServiceInterface):
 
     async def _create_collection(self, properties, alias):
         collection = await Collection._create(self, {k: v.value for k, v in properties.items()})
-        if alias != '':
+        if alias != "":
             await self._set_aliases({alias: collection})
         return collection
 
     @method()
-    async def CreateCollection(self, properties: 'a{sv}', alias: 's') -> 'oo':
+    async def CreateCollection(self, properties: "a{sv}", alias: "s") -> "oo":
         collection = await self._create_collection(properties, alias)
-        prompt = '/'
+        prompt = "/"
         return [collection.path, prompt]
 
     @method()
-    async def SearchItems(self, attributes: 'a{ss}') -> 'aoao':
+    async def SearchItems(self, attributes: "a{ss}") -> "aoao":
         unlocked = []
         locked = []
         for collection in self.collections.values():
@@ -182,7 +182,7 @@ class Service(ServiceInterface):
         return [unlocked, locked]
 
     @method()
-    async def Unlock(self, objects: 'ao') -> 'aoo':
+    async def Unlock(self, objects: "ao") -> "aoo":
         unlocked = []
         for obj_path in objects:
             try:
@@ -201,11 +201,11 @@ class Service(ServiceInterface):
                     continue
             except DBusErrorNoSuchObject:
                 pass
-        prompt = '/'
+        prompt = "/"
         return [unlocked, prompt]
 
     @method()
-    async def Lock(self, objects: 'ao') -> 'aoo':
+    async def Lock(self, objects: "ao") -> "aoo":
         locked = []
         for obj_path in objects:
             try:
@@ -216,11 +216,11 @@ class Service(ServiceInterface):
                     continue
             except DBusErrorNoSuchObject:
                 pass
-        prompt = '/'
+        prompt = "/"
         return [locked, prompt]
 
     @method()
-    async def GetSecrets(self, items: 'ao', session: 'o') -> 'a{o(oayays)}':
+    async def GetSecrets(self, items: "ao", session: "o") -> "a{o(oayays)}":
         secrets = {}
         session = self._get_session_from_path(session)
         for item_path in items:
@@ -230,28 +230,26 @@ class Service(ServiceInterface):
         return secrets
 
     @method()
-    async def ReadAlias(self, name: 's') -> 'o':
+    async def ReadAlias(self, name: "s") -> "o":
         alias = self.aliases.get(name)
-        return alias['collection'].path if alias else '/'
+        return alias["collection"].path if alias else "/"
 
     @method()
-    async def SetAlias(self, name: 's', collection: 'o') -> '':
+    async def SetAlias(self, name: "s", collection: "o") -> "":
         await self._set_aliases({name: self._get_collection_from_path(collection)})
 
     @signal()
-    def CollectionCreated(self, collection) -> 'o':
+    def CollectionCreated(self, collection) -> "o":
         return collection.path
 
     @signal()
-    def CollectionDeleted(self, collection) -> 'o':
+    def CollectionDeleted(self, collection) -> "o":
         return collection.path
 
     @signal()
-    def CollectionChanged(self, collection) -> 'o':
+    def CollectionChanged(self, collection) -> "o":
         return collection.path
 
     @dbus_property(access=PropertyAccess.READ)
-    def Collections(self) -> 'ao':
+    def Collections(self) -> "ao":
         return [collection.path for collection in self.collections.values()]
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

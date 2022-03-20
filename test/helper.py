@@ -13,32 +13,32 @@ from pass_secret_service.interfaces.service import Service
 async def get_collection(bus, path):
     introspection = await bus.introspect(bus_name, path)
     obj = bus.get_proxy_object(bus_name, path, introspection)
-    return obj.get_interface('org.freedesktop.Secret.Collection')
+    return obj.get_interface("org.freedesktop.Secret.Collection")
 
 
 async def get_item(bus, path):
     introspection = await bus.introspect(bus_name, path)
     obj = bus.get_proxy_object(bus_name, path, introspection)
-    return obj.get_interface('org.freedesktop.Secret.Item')
+    return obj.get_interface("org.freedesktop.Secret.Item")
 
 
 async def get_service(bus):
     introspection = await bus.introspect(bus_name, base_path)
     obj = bus.get_proxy_object(bus_name, base_path, introspection)
-    return obj.get_interface('org.freedesktop.Secret.Service')
+    return obj.get_interface("org.freedesktop.Secret.Service")
 
 
 async def get_session(bus, path):
     introspection = await bus.introspect(bus_name, path)
     obj = bus.get_proxy_object(bus_name, path, introspection)
-    return obj.get_interface('org.freedesktop.Secret.Session')
+    return obj.get_interface("org.freedesktop.Secret.Session")
 
 
 class ServiceEnv:
     def __init__(self, clean=True):
-        self.path = os.environ['PASSWORD_STORE_DIR']
-        if clean and os.path.exists(os.path.join(self.path, 'secret_service')):
-            shutil.rmtree(os.path.join(self.path, 'secret_service'))
+        self.path = os.environ["PASSWORD_STORE_DIR"]
+        if clean and os.path.exists(os.path.join(self.path, "secret_service")):
+            shutil.rmtree(os.path.join(self.path, "secret_service"))
 
     async def __aenter__(self):
         self.bus = await MessageBus().connect()

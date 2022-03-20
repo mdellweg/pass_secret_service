@@ -51,12 +51,12 @@ class Collection(ServiceInterface):
         self.bus.unexport(self.path)
 
     def __init__(self, service, id):
-        super().__init__('org.freedesktop.Secret.Collection')
+        super().__init__("org.freedesktop.Secret.Collection")
         self.service = service
         self.bus = self.service.bus
         self.pass_store = self.service.pass_store
         self.id = id
-        self.path = base_path + '/collection/' + self.id
+        self.path = base_path + "/collection/" + self.id
         self.locked = False
         self.items = {}
 
@@ -81,12 +81,12 @@ class Collection(ServiceInterface):
         return self
 
     @method()
-    async def Delete(self) -> 'o':
+    async def Delete(self) -> "o":
         # Delete items
         for item in list(self.items.values()):
             await item._delete()
         # Remove stale aliases
-        deleted_aliases = [name for name, alias in self.service.aliases.items() if alias['collection'] == self]
+        deleted_aliases = [name for name, alias in self.service.aliases.items() if alias["collection"] == self]
         await self.service._set_aliases({name: None for name in deleted_aliases})
         # Deregister from servise
         self.service.collections.pop(self.id)
@@ -100,18 +100,18 @@ class Collection(ServiceInterface):
         return prompt
 
     @method()
-    async def SearchItems(self, attributes: 'a{ss}') -> 'ao':
+    async def SearchItems(self, attributes: "a{ss}") -> "ao":
         return self._search_items(attributes)
 
     @method()
-    async def CreateItem(self, properties: 'a{sv}', secret: '(oayays)', replace: 'b') -> 'oo':
-        prompt = '/'
+    async def CreateItem(self, properties: "a{sv}", secret: "(oayays)", replace: "b") -> "oo":
+        prompt = "/"
         if replace:
-            attributes = properties.get(ITEM_ATTRIBUTES, Variant('a{ss}', {})).value
+            attributes = properties.get(ITEM_ATTRIBUTES, Variant("a{ss}", {})).value
             repl_items = self._search_items(attributes)
             if len(repl_items):
                 item = self.service._get_item_from_path(repl_items[0])
-                item.Label = properties.get(ITEM_LABEL, Variant('s', '')).value
+                item.Label = properties.get(ITEM_LABEL, Variant("s", "")).value
                 await item._set_secret(secret)
                 return [item.path, prompt]
         password = await self.service._decode_secret(secret)
@@ -119,41 +119,39 @@ class Collection(ServiceInterface):
         return [item.path, prompt]
 
     @signal()
-    def ItemCreated(self, item) -> 'o':
+    def ItemCreated(self, item) -> "o":
         return item.path
 
     @signal()
-    def ItemDeleted(self, item) -> 'o':
+    def ItemDeleted(self, item) -> "o":
         return item.path
 
     @signal()
-    def ItemChanged(self, item) -> 'o':
+    def ItemChanged(self, item) -> "o":
         return item.path
 
     @dbus_property(access=PropertyAccess.READ)
-    def Items(self) -> 'ao':
+    def Items(self) -> "ao":
         return [item.path for item in self.items.values()]
 
     @dbus_property(access=PropertyAccess.READWRITE)
-    def Label(self) -> 's':
+    def Label(self) -> "s":
         return str(self.properties.get(COLLECTION_LABEL))
 
     @Label.setter
-    def Label(self, label: 's'):
+    def Label(self, label: "s"):
         if self.Label != label:
             self.properties = self.pass_store.update_collection_properties(self.id, {COLLECTION_LABEL: label})
             self.service.CollectionChanged(self)
 
     @dbus_property(access=PropertyAccess.READ)
-    def Locked(self) -> 'b':
+    def Locked(self) -> "b":
         return self.locked
 
     @dbus_property(access=PropertyAccess.READ)
-    def Created(self) -> 't':
+    def Created(self) -> "t":
         return 0
 
     @dbus_property(access=PropertyAccess.READ)
-    def Modified(self) -> 't':
+    def Modified(self) -> "t":
         return 0
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

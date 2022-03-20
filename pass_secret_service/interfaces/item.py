@@ -70,13 +70,13 @@ class Item(ServiceInterface):
         self.bus.unexport(self.path)
 
     def __init__(self, collection, id):
-        super().__init__('org.freedesktop.Secret.Item')
+        super().__init__("org.freedesktop.Secret.Item")
         self.collection = collection
         self.service = self.collection.service
         self.bus = self.service.bus
         self.pass_store = self.service.pass_store
         self.id = id
-        self.path = self.collection.path + '/' + self.id
+        self.path = self.collection.path + "/" + self.id
 
     @run_in_executor
     def _get_item_properties(self):
@@ -93,51 +93,49 @@ class Item(ServiceInterface):
         return self
 
     @method()
-    async def Delete(self) -> 'o':
+    async def Delete(self) -> "o":
         await self._delete()
-        prompt = '/'
+        prompt = "/"
         return prompt
 
     @method()
-    async def GetSecret(self, session: 'o') -> '(oayays)':
+    async def GetSecret(self, session: "o") -> "(oayays)":
         return await self._get_secret(session)
 
     @method()
-    async def SetSecret(self, secret: '(oayays)'):
+    async def SetSecret(self, secret: "(oayays)"):
         await self._set_secret(secret)
 
     @dbus_property(access=PropertyAccess.READ)
-    def Locked(self) -> 'b':
+    def Locked(self) -> "b":
         return False
 
     @dbus_property(access=PropertyAccess.READWRITE)
-    def Attributes(self) -> 'a{ss}':
+    def Attributes(self) -> "a{ss}":
         return self.properties.get(ITEM_ATTRIBUTES, {})
 
     @Attributes.setter
-    def Attributes(self, attributes: 'a{ss}'):
+    def Attributes(self, attributes: "a{ss}"):
         if self.Attributes != attributes:
             self.properties = self.pass_store.update_item_properties(self.collection.id, self.id, {ITEM_ATTRIBUTES: attributes})
             self.collection.ItemChanged(self)
-            self.emit_properties_changed({'Attributes': attributes})
+            self.emit_properties_changed({"Attributes": attributes})
 
     @dbus_property(access=PropertyAccess.READWRITE)
-    def Label(self) -> 's':
-        return str(self.properties.get(ITEM_LABEL, ''))
+    def Label(self) -> "s":
+        return str(self.properties.get(ITEM_LABEL, ""))
 
     @Label.setter
-    def Label(self, label: 's'):
+    def Label(self, label: "s"):
         if self.Label != label:
             self.properties = self.pass_store.update_item_properties(self.collection.id, self.id, {ITEM_LABEL: label})
             self.collection.ItemChanged(self)
-            self.emit_properties_changed({'Label': label})
+            self.emit_properties_changed({"Label": label})
 
     @dbus_property(access=PropertyAccess.READ)
-    def Created(self) -> 't':
+    def Created(self) -> "t":
         return 0
 
     @dbus_property(access=PropertyAccess.READ)
-    def Modified(self) -> 't':
+    def Modified(self) -> "t":
         return 0
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :

@@ -33,5 +33,3 @@ class Prompt(ServiceInterface, SerialMixin):
     @signal()
     def Completed(self) -> 'bv':
         return True, Variant('s', '')
-
-#  vim: set tw=160 sts=4 ts=8 sw=4 ft=python et noro norl cin si ai :
