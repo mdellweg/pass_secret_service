@@ -1,7 +1,6 @@
 import subprocess
 import os
 
-DEFAULT_STORE_DIR = "/tmp/.password-store"
 DEFAULT_PASS = "pass"
 
 class NativePasswordStore:
