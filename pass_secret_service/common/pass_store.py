@@ -2,19 +2,30 @@ import os
 import shutil
 import uuid
 import json
-from pypass import PasswordStore
 
+try:
+    from pypass import PasswordStore
 
-# Work around a typo in pypass
-if not hasattr(PasswordStore, "get_decrypted_password"):
-    PasswordStore.get_decrypted_password = PasswordStore.get_decypted_password
+    # Work around a typo in pypass
+    if not hasattr(PasswordStore, "get_decrypted_password"):
+        PasswordStore.get_decrypted_password = PasswordStore.get_decypted_password
+
+except ImportError:
+    from .native_pass import NativePasswordStore
+    PasswordStore = NativePasswordStore
 
 
 class PassStore:
     PREFIX = "secret_service"
 
-    def __init__(self, *args, **kwargs):
-        self._store = PasswordStore(*args, **kwargs)
+    def __init__(self, *args, use_pass=None, **kwargs):
+        if not use_pass:
+            self._store = PasswordStore(*args, **kwargs)
+
+        else:
+            from .native_pass import NativePasswordStore
+            self._store = NativePasswordStore(use_pass=use_pass, **kwargs)
+
         self.base_path = os.path.join(self._store.path, self.PREFIX)
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
