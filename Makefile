@@ -3,6 +3,7 @@ relgnupghome ::= test/.gnupghome
 export GNUPGHOME ::= $(projectdir)/$(relgnupghome)
 gpg_key_id ::= "8c2a59a7"
 relpassstore ::= test/.test-password-store
+pass ::= pypass
 export PASSWORD_STORE_DIR ::= $(projectdir)/$(relpassstore)
 
 .PHONY: all test coverage style clean clean-pycache clean-build
@@ -10,7 +11,7 @@ export PASSWORD_STORE_DIR ::= $(projectdir)/$(relpassstore)
 all: style test
 
 test: | $(relpassstore)
-	dbus-run-session -- pytest-3 -v test
+	dbus-run-session -- pytest-3 -v test --asyncio-mode=auto
 
 coverage: | $(relpassstore)
 	dbus-run-session -- python3 -m coverage run -m pytest -v test
@@ -28,7 +29,7 @@ $(relgnupghome): test/test_key.asc test/test_ownertrust.txt
 
 $(relpassstore): | $(relgnupghome)
 	@echo "===== Preparing password store in $(relpassstore) ====="
-	pypass init -p $(relpassstore) $(gpg_key_id)
+	$(pass) init -p $(relpassstore) $(gpg_key_id)
 
 clean: clean-test-environment clean-pycache clean-build
 
