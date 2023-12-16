@@ -1,5 +1,5 @@
 import asyncio
-import pytest
+import pytest_asyncio
 
 from dbus_next.aio import MessageBus
 
@@ -10,13 +10,13 @@ from pass_secret_service.interfaces.service import Service
 from .helper import ServiceEnv
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def pss_service():
     async with ServiceEnv():
         yield True
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def bus():
     bus = await MessageBus().connect()
     yield bus
