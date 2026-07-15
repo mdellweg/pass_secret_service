@@ -34,7 +34,8 @@ def _main(path, verbose):
     if verbose:
         logging.basicConfig(level=20)
     pass_store = PassStore(**({"path": path} if path else {}))
-    mainloop = asyncio.get_event_loop()
+    mainloop = asyncio.new_event_loop()
+    asyncio.set_event_loop(mainloop)
     mainloop.add_signal_handler(signal.SIGTERM, functools.partial(term_loop, mainloop))
     mainloop.add_signal_handler(signal.SIGINT, functools.partial(term_loop, mainloop))
     try:
