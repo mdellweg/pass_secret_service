@@ -28,7 +28,7 @@ $(relgnupghome): test/test_key.asc test/test_ownertrust.txt
 
 $(relpassstore): | $(relgnupghome)
 	@echo "===== Preparing password store in $(relpassstore) ====="
-	pypass init -p $(relpassstore) $(gpg_key_id)
+	pass init $(gpg_key_id)
 
 clean: clean-test-environment clean-pycache clean-build
 

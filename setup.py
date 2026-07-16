@@ -24,7 +24,6 @@ setup(  # pragma: no cover
         "cryptography",
         "dbus_next",
         "decorator",
-        "pypass",
     ],
     entry_points="""
         [console_scripts]

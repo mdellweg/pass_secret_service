@@ -13,5 +13,4 @@ Once these files are in place, you will need to run `systemctl daemon-reload`. N
 
 * [secret_service dbus api](https://specifications.freedesktop.org/secret-service/)
 * [pass](https://www.passwordstore.org/)
-* [pypass](https://github.com/aviau/python-pass)
 * [SecretStorage](https://pypi.python.org/pypi/SecretStorage)

@@ -1,21 +1,20 @@
+import json
 import os
 import shutil
+import subprocess
 import uuid
-import json
-from pypass import PasswordStore
-
-
-# Work around a typo in pypass
-if not hasattr(PasswordStore, "get_decrypted_password"):
-    PasswordStore.get_decrypted_password = PasswordStore.get_decypted_password
 
 
 class PassStore:
     PREFIX = "secret_service"
 
     def __init__(self, *args, **kwargs):
-        self._store = PasswordStore(*args, **kwargs)
-        self.base_path = os.path.join(self._store.path, self.PREFIX)
+        self.store_path = os.path.expanduser(
+            kwargs.get(
+                "path", os.environ.get("PASSWORD_STORE_DIR", "~/.password-store")
+            )
+        )
+        self.base_path = os.path.join(self.store_path, self.PREFIX)
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
 
@@ -86,11 +85,39 @@ class PassStore:
         os.remove(os.path.join(self.base_path, collection_name, name) + ".gpg")
         os.remove(os.path.join(self.base_path, collection_name, name) + ".properties")
 
+    def __pass_cmd(
+        self, subcmd: str, collection_name: str, name: str, **kwargs
+    ) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["pass", subcmd, os.path.join(self.PREFIX, collection_name, name)],
+            check=True,
+            env=dict(
+                GIT_CONFIG_COUNT="2",
+                GIT_CONFIG_KEY_0="user.email",
+                GIT_CONFIG_VALUE_0="pass_secret_service@localhost",
+                GIT_CONFIG_KEY_1="user.name",
+                GIT_CONFIG_VALUE_1="pass_secret_service",
+                PASSWORD_STORE_DIR=self.store_path,
+            ),
+            text=True,
+            **kwargs,
+        )
+
     def set_item_password(self, collection_name, name, password):
-        self._store.insert_password(os.path.join(self.PREFIX, collection_name, name), password)
+        self.__pass_cmd(
+            "insert",
+            collection_name,
+            name,
+            input="".join([f"{password}\n"]*2)
+        )
 
     def get_item_password(self, collection_name, name):
-        return self._store.get_decrypted_password(os.path.join(self.PREFIX, collection_name, name))
+        return self.__pass_cmd(
+            "show",
+            collection_name,
+            name,
+            capture_output=True,
+        ).stdout.removesuffix("\n")
 
     def save_item_properties(self, collection_name, name, properties):
         with open(os.path.join(self.base_path, collection_name, name) + ".properties", "w") as fp:

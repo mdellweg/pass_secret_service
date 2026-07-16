@@ -8,7 +8,7 @@ ENV LC_ALL C.UTF-8
 RUN apt-get update && \
   apt-get -y --no-install-recommends install \
     make dbus gpg python3-pip \
-    pypass python3-gi python3-secretstorage python3-click python3-decorator \
+    python3-gi python3-secretstorage python3-click python3-decorator \
     pycodestyle black python3-coverage python3-pytest python3-pytest-asyncio && \
   pip3 install --no-cache-dir dbus-next && \
   apt-get purge -y --autoremove python3-pip && \
